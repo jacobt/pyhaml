@@ -1,4 +1,5 @@
 from __future__ import division
+from __future__ import with_statement
 
 import re
 import os
@@ -184,32 +185,28 @@ class engine(object):
 			self.write(' %s="%s"' % (k, str(v).replace('"', '&quot;')))
 	
 	def compile(self, s):
-		self.parser.depth = 0
-		self.parser.src = []
-		self.parser.trim_next = False
-		self.parser.last_obj = None
-		self.parser.debug = self.op.debug
-		self.parser.op = self.op
+		self.parser.__dict__.update({
+			'depth': 0,
+			'src': [],
+			'trim_next': False,
+			'last_obj': None,
+			'debug': self.op.debug,
+			'op': self.op
+		})
 		
 		self.lexer.begin('INITIAL')
-		self.lexer.tabs = lexer.Tabs()
-		self.lexer.depth = 0
+		self.lexer.__dict__.update({
+			'tabs': lexer.Tabs(),
+			'depth': 0
+		})
 		
 		self.parser.parse(s, lexer=self.lexer, debug=self.op.debug)
 		return '\n'.join(self.parser.src)
 	
-	def to_html(self, s, *args, **kwargs):
-		s = s.strip()
-		if s == '':
-			return ''
-		
+	def execute(self, src, *args):
 		self.reset()
-		self.setops(*args, **kwargs)
-		
 		if len(args) > 0:
 			self.globals.update(args[0])
-		
-		src = self.compile(s)
 		if self.op.debug:
 			sys.stdout.write(src)
 		finder = haml_finder(self)
@@ -220,12 +217,22 @@ class engine(object):
 		finally:
 			sys.meta_path.remove(finder)
 	
+	def to_html(self, s, *args, **kwargs):
+		s = s.strip()
+		if s == '':
+			return ''
+		self.setops(*args, **kwargs)
+		return self.execute(self.compile(s), *args)
+	
 	def render(self, path, *args, **kwargs):
-		f = open(path)
-		try:
-			return self.to_html(f.read(), path=path, *args, **kwargs)
-		finally:
-			f.close()
+		self.setops(path=path, *args, **kwargs)
+		if not os.path.exists(path + '.py') or os.path.getmtime(path) > os.path.getmtime(path + '.py'):
+			with open(path + '.py', 'w') as py:
+				with open(path) as haml:
+					py.write(self.compile(haml.read()))
+		
+		with open(path + '.py') as f:
+			return self.execute(f.read(), *args)
 
 en = engine()
 to_html = en.to_html
