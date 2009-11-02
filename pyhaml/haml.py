@@ -141,16 +141,16 @@ class engine(object):
 		return None
 	
 	def load_module(self, fullname, path, loader):
-		f = open(path)
-		try:
+		if not os.path.exists(path + '.py') or os.path.getmtime(path) > os.path.getmtime(path + '.py'):
+			with open(path + '.py', 'w') as py:
+				with open(path) as haml:
+					py.write(self.compile(haml.read()))
+		with open(path + '.py') as f:
 			src = f.read()
-		finally:
-			f.close()
 		mod = imp.new_module(fullname)
 		mod = sys.modules.setdefault(fullname, mod)
 		mod.__file__ = path
 		mod.__loader__ = loader
-		src = self.compile(src)
 		mod.__dict__.update(self.globals)
 		ex(src, mod.__dict__)
 		return mod
