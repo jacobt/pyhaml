@@ -1,29 +1,14 @@
 #pyHaml
 
-pyHaml is a python port of [Haml](http://haml.hamptoncatlin.com), an HTML templating engine used primarily with Ruby on Rails.
-I'll refer to Ruby Haml as rHaml.
+pyHaml is a python port of [Haml](http://haml.hamptoncatlin.com), an HTML templating engine used primarily with Ruby on Rails.  Ruby Haml will be referred to as rHaml for the purposes of this document.
 
-The goals of the project are to create a Haml templating engine that is
-
-1. pythonic
-2. flexible
-3. portable
-
-#pythonic
-
-In order to make pyHaml a bit more pythonic, most of the syntax evaluated as Ruby in rHaml is evaluated as python.
-
-For example, the following rHaml code snippet:
+In order to make pyHaml a bit more pythonic, most of the syntax evaluated as Ruby in rHaml is evaluated as python.  For example, the following rHaml code snippet:
 
     %tagname{:attr1 => 'value1', :attr2 => 'value2'} Contents
 
-is written in pyhaml as:
+is written in pyhaml, using python `dict`, as:
 
     %tagname{'attr1': 'value1', 'attr2': 'value2'} Contents
-
-using python `dict` syntax rather than Ruby hash syntax.
-
-#flexible
 
 pyHaml aims to be flexible and intuitive, allowing python to be evaluated inline as would be expected.
 
@@ -39,7 +24,20 @@ yields
     <p>4</p>
     <p>9</p>
 
-#portable
+#imports
 
-pyHaml aims to run on both version 2.x and 3.x of python is a maintenance friendly manner.
-This is accomplished by monkey patching python upon starting execution.
+Markup should be reused just like code (since it is code).  In this vein there should be some way to use one haml document from within another.  In the spirit of python, pyHaml does this using the import statement.  For instance, assuming the following two documents:
+
+    -# foo.haml
+    - def foo():
+      %p foo
+
+    -# bar.haml
+    - import foo
+    - foo.foo()
+
+rendering `bar.haml` produces `<p>foo</p>`.  Some versions of python, particularly the one used in google appengine, cache imports.  This makes it impossible to use import for this purpose.  For this reason, the `__imp__` method is provided instead.  In the previous example the line `- import foo` would be written as `- __imp__('foo')`.
+
+#portability
+
+pyHaml runs on python 2.5, 2.6 and the latest version of python 3.
