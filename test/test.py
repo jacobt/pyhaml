@@ -181,6 +181,7 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('<p>bar</p>\n', to_html("-foo='bar'\n%p=foo"))
 		self.assertEqual('<p>barboom</p>\n', to_html("-foo='bar'\n-foo+='boom'\n%p=foo"))
 		self.assertEqual('<p>multiline</p>\n', to_html("-foo=('multi'\n'line')\n%p=foo"))
+		self.assertEqual('ab\n', to_html("-a='a'\n\n-b='b'\n=a+b"))
 	
 	def testattrwithscript(self):
 		self.assertEqual('<p foo="bar"></p>\n', to_html("-foo='bar'\n%p{'foo':foo}"))

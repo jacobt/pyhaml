@@ -113,7 +113,7 @@ def read_script(t):
 			return src
 
 def t_tag_doctype_comment_INITIAL_LF(t):
-	r'\n'
+	r'\n([\s]*\n)?'
 	t.lexer.lineno += t.value.count('\n')
 	t.lexer.begin('INITIAL')
 	t.lexer.push_state('tabs')

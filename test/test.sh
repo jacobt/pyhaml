@@ -1,6 +1,6 @@
+for v in "2.5" "2.6" "3.1"
+do
+	make clean
+	python$v $(dirname $0)/test.py
+done
 make clean
-python2.5 $(dirname $0)/test.py
-make clean
-python2.6 $(dirname $0)/test.py
-make clean
-python3.1 $(dirname $0)/test.py

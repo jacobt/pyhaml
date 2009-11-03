@@ -74,7 +74,7 @@ class engine(object):
 	doctypes['html4'][''] = doctypes['html4']['transitional']
 	
 	usage = 'usage: %prog [-d|--debug] [-h|--help] [-e|--escape] [(-f|--format)=(html5|html4|xhtml)]'
-	optparser = OptionParser(usage, version='%%prog %s' % __version__)
+	optparser = OptionParser(usage, version=__version__)
 	
 	optparser.add_option('-d', '--debug',
 		help='display debugging information',
@@ -83,7 +83,7 @@ class engine(object):
 		default=False)
 
 	optparser.add_option('-f', '--format',
-		help='html output format: html5, html4, xhtml',
+		help='[html5, html4, xhtml]',
 		type='choice',
 		choices=['html5', 'html4', 'xhtml'],
 		default=doctypes['html5'],
@@ -201,7 +201,7 @@ class engine(object):
 		})
 		
 		self.parser.parse(s, lexer=self.lexer, debug=self.op.debug)
-		return '\n'.join(self.parser.src)
+		return '\n'.join(self.parser.src) + '\n'
 	
 	def execute(self, src, *args):
 		self.reset()
