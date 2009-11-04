@@ -57,10 +57,11 @@ class engine(object):
 		dest='escape',
 		default=False)
 	
-	optparser.add_option('-p', '--path',
-		help='haml import path',
-		default='',
-		dest='path')
+	optparser.add_option('-b', '--batch',
+		help='batch compile haml files',
+		action='store_true',
+		dest='batch',
+		default=False)
 	
 	def __init__(self):
 		self.parser = yacc.yacc(
@@ -94,10 +95,7 @@ class engine(object):
 		return None
 	
 	def load_module(self, fullname, path, loader):
-		if not os.path.exists(path + '.py') or os.path.getmtime(path) > os.path.getmtime(path + '.py'):
-			with open(path + '.py', 'w') as py:
-				with open(path) as haml:
-					py.write(self.compile(haml.read()))
+		self.cache(path)
 		with open(path + '.py') as f:
 			src = f.read()
 		mod = imp.new_module(fullname)
@@ -170,6 +168,14 @@ class engine(object):
 		finally:
 			sys.meta_path.remove(finder)
 	
+	def cache(self, path):
+		if os.path.exists(path + '.py'):
+			if os.path.getmtime(path) <= os.path.getmtime(path + '.py'):
+				return
+		with open(path + '.py', 'w') as py:
+			with open(path) as haml:
+				py.write(self.compile(haml.read()))
+	
 	def to_html(self, s, *args, **kwargs):
 		s = s.strip()
 		if s == '':
@@ -179,22 +185,25 @@ class engine(object):
 	
 	def render(self, path, *args, **kwargs):
 		self.setops(path=path, *args, **kwargs)
-		if not os.path.exists(path + '.py') or os.path.getmtime(path) > os.path.getmtime(path + '.py'):
-			with open(path + '.py', 'w') as py:
-				with open(path) as haml:
-					py.write(self.compile(haml.read()))
-		
+		self.cache(path)
 		with open(path + '.py') as f:
 			return self.execute(f.read(), *args)
 
-en = engine()
-to_html = en.to_html
-render = en.render
+eng = engine()
+to_html = eng.to_html
+render = eng.render
 
 if __name__ == '__main__':
 	(op, args) = engine.optparser.parse_args(sys.argv[1:])
-	if op.path:
-		s = render(en.op.path, **op.__dict__)
+	
+	if op.batch:
+		eng.setops(**op.__dict__)
+		for p in args:
+			eng.cache(p)
 	else:
-		s = to_html(sys.stdin.read(), **op.__dict__)
-	sys.stdout.write(s)
+		if not len(args):
+			s = to_html(sys.stdin.read(), **op.__dict__)
+		else:
+			s = render(args[0], **op.__dict__)
+		
+		sys.stdout.write(s)
