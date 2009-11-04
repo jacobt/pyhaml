@@ -1,6 +1,41 @@
 import sys
 from .lexer import tokens
 
+doctypes = {
+	'xhtml': {
+		'strict':
+			'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" '
+			'"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">',
+		'transitional':
+			'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" '
+			'"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
+		'basic':
+			'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN" '
+			'"http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd">',
+		'mobile':
+			'<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" '
+			'"http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">',
+		'frameset':
+			'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" '
+			'"http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">'
+	},
+	'html4': {
+		'strict':
+			'<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" '
+			'"http://www.w3.org/TR/html4/strict.dtd">',
+		'frameset':
+			'<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN" '
+			'"http://www.w3.org/TR/html4/frameset.dtd">',
+		'transitional':
+			'<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" '
+			'"http://www.w3.org/TR/html4/loose.dtd">'
+	},
+	'html5': { '': '<!doctype html>' }
+}
+
+doctypes['xhtml'][''] = doctypes['xhtml']['transitional']
+doctypes['html4'][''] = doctypes['html4']['transitional']
+
 class haml_obj(object):
 	
 	def __init__(self, parser):
@@ -101,7 +136,7 @@ class Doctype(haml_obj):
 			s = '<?xml version="1.0" encoding="%s"?>'
 			self.push(s % self.type, literal=True)
 		else:
-			s = self.parser.op.format[self.type]
+			s = doctypes[self.parser.op.format][self.type]
 			self.push(s, literal=True)
 	
 	def close(self):

@@ -8,9 +8,8 @@ dir = os.path.dirname(__file__)
 sys.path.insert(0, os.path.dirname(dir))
 
 from pyhaml.patch import StringIO
+from pyhaml.parser import doctypes
 from pyhaml.haml import to_html, render, engine
-
-doctypes = engine.doctypes
 
 class TestHaml(unittest.TestCase):
 	

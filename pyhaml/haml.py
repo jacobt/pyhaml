@@ -36,45 +36,7 @@ class haml_finder(object):
 
 class engine(object):
 	
-	doctypes = {
-		'xhtml': {
-			'strict':
-				'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" '
-				'"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">',
-			'transitional':
-				'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" '
-				'"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
-			'basic':
-				'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN" '
-				'"http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd">',
-			'mobile':
-				'<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" '
-				'"http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">',
-			'frameset':
-				'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" '
-				'"http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">'
-		},
-		'html4': {
-			'strict':
-				'<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" '
-				'"http://www.w3.org/TR/html4/strict.dtd">',
-			'frameset':
-				'<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN" '
-				'"http://www.w3.org/TR/html4/frameset.dtd">',
-			'transitional':
-				'<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" '
-				'"http://www.w3.org/TR/html4/loose.dtd">'
-		},
-		'html5': {
-			'': '<!doctype html>'
-		}
-	}
-	
-	doctypes['xhtml'][''] = doctypes['xhtml']['transitional']
-	doctypes['html4'][''] = doctypes['html4']['transitional']
-	
-	usage = 'usage: %prog [-d|--debug] [-h|--help] [-e|--escape] [(-f|--format)=(html5|html4|xhtml)]'
-	optparser = OptionParser(usage, version=__version__)
+	optparser = OptionParser(version=__version__)
 	
 	optparser.add_option('-d', '--debug',
 		help='display debugging information',
@@ -83,12 +45,11 @@ class engine(object):
 		default=False)
 
 	optparser.add_option('-f', '--format',
-		help='[html5, html4, xhtml]',
+		help='(html5|html4|xhtml)',
 		type='choice',
 		choices=['html5', 'html4', 'xhtml'],
-		default=doctypes['html5'],
-		action='callback',
-		callback=lambda op, o, v, p: setattr(p.values, 'format', engine.doctypes[v]))
+		default='html5',
+		dest='format')
 
 	optparser.add_option('-e', '--escape',
 		help='sanitize values by default',
@@ -122,16 +83,8 @@ class engine(object):
 		}
 	
 	def setops(self, *args, **kwargs):
-		if 'args' in kwargs:
-			argv = kwargs['args']
-		else:
-			argv = []
-			for k,v in kwargs.items():
-				if isinstance(v, bool):
-					argv += ['--' + k] if v else []
-				else:
-					argv += ['--' + k, str(v)]
-		self.op, _ = engine.optparser.parse_args(argv)
+		self.op, _ = engine.optparser.parse_args([])
+		self.op.__dict__.update(kwargs)
 	
 	def find_module(self, fullname):
 		dir = os.path.dirname(self.op.path)
@@ -239,8 +192,9 @@ to_html = en.to_html
 render = en.render
 
 if __name__ == '__main__':
-	en.setops(args=sys.argv[1:])
-	if en.op.path:
-		sys.stdout.write(render(en.op.path, args=sys.argv[1:]))
+	(op, args) = engine.optparser.parse_args(sys.argv[1:])
+	if op.path:
+		s = render(en.op.path, **op.__dict__)
 	else:
-		sys.stdout.write(to_html(sys.stdin.read(), args=sys.argv[1:]))
+		s = to_html(sys.stdin.read(), **op.__dict__)
+	sys.stdout.write(s)
