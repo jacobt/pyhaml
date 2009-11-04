@@ -169,6 +169,8 @@ class engine(object):
 			sys.meta_path.remove(finder)
 	
 	def cache(self, path):
+		if not os.path.isfile(path):
+			raise Exception('file not found "%s"' % path)
 		if os.path.exists(path + '.py'):
 			if os.path.getmtime(path) <= os.path.getmtime(path + '.py'):
 				return
@@ -198,7 +200,7 @@ if __name__ == '__main__':
 	
 	if op.batch:
 		eng.setops(**op.__dict__)
-		for p in args:
+		for p in (s for s in args if s.endswith('.haml')):
 			eng.cache(p)
 	else:
 		if not len(args):
