@@ -1,3 +1,4 @@
+from __future__ import with_statement
 import os
 import sys
 import difflib
@@ -15,15 +16,11 @@ class TestHaml(unittest.TestCase):
 	
 	def diff(self, s, *args):
 		p = os.path.join(dir, 'haml/%s.haml' % s)
-		s1 = render(p, *args)
-		s1 = StringIO(s1).readlines()
+		s1 = StringIO(render(p, *args)).readlines()
 		
 		p = os.path.join(dir, 'html/%s.html' % s)
-		f = open(p)
-		try:
+		with open(p) as f:
 			s2 = f.readlines()
-		finally:
-			f.close()
 		g = difflib.context_diff(s1, s2,
 			fromfile='%s.haml' % s,
 			tofile='%s.html' % s)
@@ -189,12 +186,9 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('<p>0</p>\n<p>1</p>\n', to_html("-for i in range(2):\n %p=i"))
 	
 	def testfunc(self):
-		haml = "-def foo():\n %p{'a':'b'}\n-for i in range(2):\n -foo()"
-		html = '<p a="b"></p>\n<p a="b"></p>\n'
-		self.assertEqual(html, to_html(haml))
-		haml = "-def foo():\n %a\n%p\n - foo()"
-		html = '<p>\n  <a></a>\n</p>\n'
-		self.assertEqual(html, to_html(haml))
+		self.assertEqual('<p>0</p>\n<p>1</p>\n', to_html('-def foo(n):\n %p=n\n-for i in range(2):\n -foo(i)'))
+		self.assertEqual('<p>\n  <a></a>\n</p>\n', to_html('-def foo():\n %a\n%p\n - foo()'))
+		self.assertEqual('foo\n', to_html('-foo="foo"\n-def bar():\n =foo\n-bar()'))
 
 	def testselfcloseautoclose(self):
 		self.assertEqual('<script src="foo"></script>\n', to_html("%script{'src':'foo'}"))

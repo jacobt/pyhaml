@@ -163,7 +163,7 @@ class engine(object):
 		finder = haml_finder(self)
 		sys.meta_path.append(finder)
 		try:
-			ex(src, self.globals, {})
+			ex(src, self.globals)
 			return ''.join(self.html).strip() + '\n'
 		finally:
 			sys.meta_path.remove(finder)
