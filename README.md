@@ -32,7 +32,7 @@ By allowing haml inside of python code blocks, some handy functionality can be p
           -f()
     
     -def foo():
-      =foo
+      foo
     
     -wrap(foo)
 
