@@ -36,6 +36,7 @@ By allowing haml inside of python code blocks, some handy functionality can be p
     
     -wrap(foo)
 
+which produces the following html:
 
     <div class="wrapper">
       <p>
@@ -59,7 +60,7 @@ rendering `bar.haml` produces `<p>foo</p>`.  Some versions of python, particular
 
 #command line
 
-pyhaml uses relative imports within the package.  Therefore, when running pyhaml from the command line, one must use python's -m switch in order to run pyhaml.  For instance, one could use `python -m pyhaml.haml <args...>` at the command line.
+pyhaml uses relative imports within the package.  For command line use, the guidlines in [PEP 366](http://www.python.org/dev/peps/pep-0366/) are followed.  Therefore, when running pyhaml from the command line, one must use python's -m switch in order to run pyhaml.  For instance, one could use `python -m pyhaml.haml <args...>` at the command line.
 
 #portability
 
