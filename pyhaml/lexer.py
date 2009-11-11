@@ -163,11 +163,12 @@ def t_doctype_HTMLTYPE(t):
 
 def t_VALUE(t):
 	r'[^=&/#!.%\n\t -][^\n]*'
+	t.value = t.value.strip()
 	if t.value[0] == '\\':
 		t.value = t.value[1:]
-	if t.value.strip()[-2:] in ('\t|',' |'):
+	if t.value[-2:] in ('\t|',' |'):
 		t.lexer.begin('multi')
-		t.value = t.value.strip()[:-1].strip()
+		t.value = t.value[:-1].strip()
 	return t
 
 def t_CONDCOMMENT(t):
@@ -242,7 +243,7 @@ def t_tag_VALUE(t):
 	return t
 
 def t_multi_newline(t):
-	r'\n+'
+	r'\n([\s]*\n)?'
 	t.lexer.lineno += t.value.count('\n')
 
 def t_multi_VALUE(t):
@@ -251,7 +252,11 @@ def t_multi_VALUE(t):
 		t.value = t.value.strip()[:-1].strip()
 		return t
 	t.lexer.lexpos -= len(t.value)
-	t.lexer.begin('tabs')
+	t.lexer.begin('INITIAL')
+	t.lexer.push_state('tabs')
+	t.type = 'LF'
+	t.value = '\n'
+	return t
 
 def t_ANY_error(t):
 	sys.stderr.write('Illegal character(s) [%s]\n' % t.value)
