@@ -24,6 +24,25 @@ yields
     <p>4</p>
     <p>9</p>
 
+By allowing haml inside of python code blocks, some handy functionality can be produced through function composition.  For instance, to wrap the output of a function in some predefined html one could use the following construct:
+
+    -def wrap(f):
+      .wrapper
+        %p
+          -f()
+    
+    -def foo():
+      =foo
+    
+    -wrap(foo)
+
+
+    <div class="wrapper">
+      <p>
+        foo
+      </p>
+    </div>
+
 #imports
 
 Markup should be reused just like code (since it is code).  In this vein there should be some way to use one haml document from within another.  In the spirit of python, pyHaml does this using the import statement.  For instance, assuming the following two documents:
@@ -36,7 +55,11 @@ Markup should be reused just like code (since it is code).  In this vein there s
     - import foo
     - foo.foo()
 
-rendering `bar.haml` produces `<p>foo</p>`.  Some versions of python, particularly the one used in google appengine, cache imports.  This makes it impossible to use import for this purpose.  For this reason, the `__imp__` method is provided instead.  In the previous example the line `- import foo` would be written as `- __imp__('foo')`.
+rendering `bar.haml` produces `<p>foo</p>`.  Some versions of python, particularly the one used in google appengine, cache imports.  This makes it impossible to use import for this purpose.  For this reason, the `__imp__` method is provided instead.  In the previous example the line `- import foo` would be written as `-foo = __imp__('foo')`.
+
+#command line
+
+pyhaml uses relative imports within the package.  Therefore, when running pyhaml from the command line, one must use python's -m switch in order to run pyhaml.  For instance, one could use `python -m pyhaml.haml <args...>` at the command line.
 
 #portability
 
