@@ -278,7 +278,7 @@ def write(parser, s, literal=False, escape=False):
 	script(parser, '%s(%s)' % (f, s))
 
 def script(parser, s):
-	pre = ' ' * parser.depth
+	pre = '\t' * parser.depth
 	parser.src += [pre + s]
 
 def close(obj):
