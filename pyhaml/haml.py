@@ -73,15 +73,7 @@ class engine(object):
 	def reset(self):
 		self.depth = 0
 		self.html = []
-		self.globals = {
-			'__write__': self.write,
-			'__escape__': self.escape,
-			'__attrs__': self.attrs,
-			'__indent__': self.indent,
-			'__entab__': self.entab,
-			'__detab__': self.detab,
-			'__imp__': self.imp,
-		}
+		self.globals = { '_haml': self }
 	
 	def setops(self, *args, **kwargs):
 		self.op, _ = engine.optparser.parse_args([])

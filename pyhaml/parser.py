@@ -1,4 +1,5 @@
 import sys
+from functools import *
 from .lexer import tokens
 
 doctypes = {
@@ -40,27 +41,19 @@ class haml_obj(object):
 	
 	def __init__(self, parser):
 		self.parser = parser
-	
-	def push(self, *args, **kwargs):
-		push(self.parser, *args, **kwargs)
-	
-	def write(self, *args, **kwargs):
-		write(self.parser, *args, **kwargs)
-	
-	def script(self, *args, **kwargs):
-		script(self.parser, *args, **kwargs)
-	
-	def enblock(self, *args, **kwargs):
-		enblock(self.parser, *args, **kwargs)
-	
-	def deblock(self, *args, **kwargs):
-		deblock(self.parser, *args, **kwargs)
+		self.__dict__.update({
+			'push': partial(push, parser),
+			'write': partial(write, parser),
+			'script': partial(script, parser),
+			'enblock': partial(enblock, parser),
+			'deblock': partial(deblock, parser),
+		})
 	
 	def entab(self):
-		script(self.parser, '__entab__()')
+		script(self.parser, '_haml.entab()')
 	
 	def detab(self):
-		script(self.parser, '__detab__()')
+		script(self.parser, '_haml.detab()')
 	
 	def open(self):
 		pass
@@ -231,7 +224,7 @@ class Tag(haml_obj):
 			inner=self.inner,
 			outer=self.outer,
 			literal=True)
-		self.script('__attrs__(%s, %s)' % (self.dict, repr(self.attrs)))
+		self.script('_haml.attrs(%s, %s)' % (self.dict, repr(self.attrs)))
 		
 		if self.value:
 			self.write('>', literal=True)
@@ -268,13 +261,13 @@ def push(parser, s, inner=False, outer=False, **kwargs):
 	if outer or parser.trim_next:
 		write(parser, s, **kwargs)
 	else:
-		script(parser, '__indent__()')
+		script(parser, '_haml.indent()')
 		write(parser, s, **kwargs)
 	parser.trim_next = inner
 
 def write(parser, s, literal=False, escape=False):
 	s = repr(s) if literal else 'str(%s)' % s
-	f = '__escape__' if escape else '__write__'
+	f = '_haml.escape' if escape else '_haml.write'
 	script(parser, '%s(%s)' % (f, s))
 
 def script(parser, s):
