@@ -56,7 +56,7 @@ Markup should be reused just like code (since it is code).  In this vein there s
     - import foo
     - foo.foo()
 
-rendering `bar.haml` produces `<p>foo</p>`.  Some versions of python, particularly the one used in google appengine, cache imports.  This makes it impossible to use import for this purpose.  For this reason, the `__imp__` method is provided instead.  In the previous example the line `- import foo` would be written as `-foo = __imp__('foo')`.
+rendering `bar.haml` produces `<p>foo</p>`.  Some versions of python, particularly the one used in google appengine, cache imports.  This makes it impossible to use import for this purpose.  For this reason, the `__imp__` method is provided instead.  In the previous example the line `- import foo` would be written as `-foo = _haml.imp('foo')`.
 
 #command line
 
