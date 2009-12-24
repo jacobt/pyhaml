@@ -68,6 +68,20 @@ class haml_obj(object):
 	def error(self, msg):
 		raise Exception(msg)
 
+class Filter(haml_obj):
+	
+	def __init__(self, parser, type):
+		haml_obj.__init__(self, parser)
+		self.type = type
+		self.lines = []
+	
+	def addline(self, l):
+		self.lines.append(l)
+	
+	def open(self):
+		for l in self.lines:
+			self.push(l, literal=1)
+
 class Content(haml_obj):
 	
 	def __init__(self, parser, value):
@@ -308,6 +322,7 @@ def p_doc_indent_obj(p):
 
 def p_obj(p):
 	'''obj : element
+		| filter
 		| content
 		| comment
 		| condcomment
@@ -315,6 +330,15 @@ def p_obj(p):
 		| script
 		| silentscript'''
 	p[0] = p[1]
+
+def p_filter(p):
+	'''filter : filter FILTER
+				| FILTER'''
+	if len(p) == 2:
+		p[0] = Filter(p.parser, p[1])
+	elif len(p) == 3:
+		p[0] = p[1]
+		p[0].addline(p[2])
 
 def p_silentscript(p):
 	'''silentscript : SILENTSCRIPT'''

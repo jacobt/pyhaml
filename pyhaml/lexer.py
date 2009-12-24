@@ -5,40 +5,6 @@ import token
 
 from .patch import toks, untokenize
 
-class Tabs(object):
-	def __init__(self):
-		self.type = None
-		self.depth = 0
-		self.length = None
-		self.history = []
-	
-	def push(self):
-		self.history.append(self.depth)
-		self.start = self.depth
-	
-	def pop(self):
-		self.depth = self.history.pop()
-	
-	def process(self, s):
-		s = re.sub('[^ \t]', '', s)
-		if s == '':
-			self.depth = 0
-			return self.depth
-		
-		if self.type == None:
-			self.type = s[0]
-			self.length = len(s)
-		
-		if not all(c == self.type for c in s):
-			raise Exception('mixed indentation')
-		
-		depth = int(len(s) / self.length)
-		if len(s) % self.length > 0 or depth - self.depth > 1:
-			raise Exception('invalid indentation')
-		
-		self.depth = depth
-		return self.depth
-
 tokens = (
 	'LF',
 	'DOCTYPE',
@@ -55,6 +21,7 @@ tokens = (
 	'COMMENT',
 	'CONDCOMMENT',
 	'TYPE',
+	'FILTER',
 )
 
 states = (
@@ -65,6 +32,7 @@ states = (
 	('tabs', 'exclusive'),
 	('multi', 'exclusive'),
 	('script', 'exclusive'),
+	('filter', 'exclusive'),
 )
 
 literals = '":,{}<>/'
@@ -72,7 +40,8 @@ t_ANY_ignore = '\r'
 
 def build(self, **kwargs):
 	self.lexer.depth = 0
-	self.tabs = Tabs()
+	self.lexer.type = None
+	self.lexer.length = None
 	return self
 
 def pytokens(t):
@@ -112,6 +81,12 @@ def read_script(t):
 			src = untokenize(src).strip()
 			return src
 
+def start_block(t):
+	t.lexer.block = t.lexer.depth
+
+def end_block(t):
+	return t.lexer.block >= t.lexer.depth
+
 def t_tag_doctype_comment_INITIAL_LF(t):
 	r'\n([\s]*\n)?'
 	t.lexer.lineno += t.value.count('\n')
@@ -121,28 +96,39 @@ def t_tag_doctype_comment_INITIAL_LF(t):
 
 def t_tabs_other(t):
 	r'[^ \t]'
-	t.lexer.depth = t.lexer.tabs.process('')
 	t.lexer.lexpos -= len(t.value)
+	t.lexer.depth = 0
 	t.lexer.pop_state()
 
 def t_tabs_indent(t):
 	r'[ \t]+'
-	t.lexer.depth = t.lexer.tabs.process(t.value)
+	if t.lexer.type == None:
+		t.lexer.type = t.value[0]
+		t.lexer.length = len(t.value)
+	
+	if any(c != t.lexer.type for c in t.value):
+		raise Exception('mixed indentation')
+	
+	depth = int(len(t.value) / t.lexer.length)
+	if len(t.value) % t.lexer.length > 0 or depth - t.lexer.depth > 1:
+		raise Exception('invalid indentation')
+	
+	t.lexer.depth = depth
 	t.lexer.pop_state()
 
 def t_silentcomment(t):
 	r'-\#[^\n]*'
-	t.lexer.tabs.push()
+	start_block(t)
 	t.lexer.push_state('silent')
 
 def t_silent_LF(t):
-	r'\n'
+	r'\n([\s]*\n)?'
 	t.lexer.lineno += t.value.count('\n')
 	t.lexer.push_state('tabs')
 
 def t_silent_other(t):
 	r'[^\n]+'
-	if t.lexer.tabs.depth <= t.lexer.tabs.start:
+	if end_block(t):
 		t.lexer.lexpos -= len(t.value)
 		t.lexer.pop_state()
 
@@ -162,7 +148,7 @@ def t_doctype_HTMLTYPE(t):
 	return t
 
 def t_VALUE(t):
-	r'[^=&/#!.%\n\t -][^\n]*'
+	r'[^:=&/#!.%\n\t -][^\n]*'
 	t.value = t.value.strip()
 	if t.value[0] == '\\':
 		t.value = t.value[1:]
@@ -257,6 +243,26 @@ def t_multi_VALUE(t):
 	t.type = 'LF'
 	t.value = '\n'
 	return t
+
+def t_FILTER(t):
+	r':[^\n]+'
+	t.value = t.value[1:]
+	start_block(t)
+	t.lexer.push_state('filter')
+	return t
+
+def t_filter_LF(t):
+	r'\n([\s]*\n)?'
+	t.lexer.lineno += t.value.count('\n')
+	t.lexer.push_state('tabs')
+
+def t_filter_FILTER(t):
+	r'[^\n]+'
+	if end_block(t):
+		t.lexer.lexpos -= len(t.value)
+		t.lexer.pop_state()
+	else:
+		return t
 
 def t_ANY_error(t):
 	sys.stderr.write('Illegal character(s) [%s]\n' % t.value)

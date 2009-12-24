@@ -134,13 +134,14 @@ class engine(object):
 			'trim_next': False,
 			'last_obj': None,
 			'debug': self.op.debug,
-			'op': self.op
+			'op': self.op,
 		})
 		
 		self.lexer.begin('INITIAL')
 		self.lexer.__dict__.update({
-			'tabs': lexer.Tabs(),
-			'depth': 0
+			'depth': 0,
+			'type': None,
+			'length': None,
 		})
 		
 		self.parser.parse(s, lexer=self.lexer, debug=self.op.debug)
