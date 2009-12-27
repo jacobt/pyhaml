@@ -66,8 +66,8 @@ class engine(object):
 	def __init__(self):
 		self.parser = yacc.yacc(
 			module=parser,
-			write_tables=False,
-			debug=False)
+			write_tables=0,
+			debug=0)
 		self.lexer = lex.lex(module=lexer)
 	
 	def reset(self):
@@ -135,6 +135,7 @@ class engine(object):
 			'last_obj': None,
 			'debug': self.op.debug,
 			'op': self.op,
+			'to_close': [],
 		})
 		
 		self.lexer.begin('INITIAL')
@@ -142,6 +143,7 @@ class engine(object):
 			'depth': 0,
 			'type': None,
 			'length': None,
+			'block': None,
 		})
 		
 		self.parser.parse(s, lexer=self.lexer, debug=self.op.debug)

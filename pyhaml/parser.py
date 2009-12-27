@@ -70,8 +70,14 @@ class haml_obj(object):
 
 class Filter(haml_obj):
 	
+	types = (
+		'plain',
+	)
+	
 	def __init__(self, parser, type):
 		haml_obj.__init__(self, parser)
+		if not type in Filter.types:
+			self.error('Invalid filter: %s' % type)
 		self.type = type
 		self.lines = []
 	
@@ -309,7 +315,6 @@ def p_haml_doc(p):
 
 def p_doc(p):
 	'doc : obj'
-	p.parser.to_close = []
 	open(p, p[1])
 
 def p_doc_obj(p):

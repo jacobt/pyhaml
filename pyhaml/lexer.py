@@ -42,6 +42,7 @@ def build(self, **kwargs):
 	self.lexer.depth = 0
 	self.lexer.type = None
 	self.lexer.length = None
+	self.lexer.block = None
 	return self
 
 def pytokens(t):
@@ -81,12 +82,6 @@ def read_script(t):
 			src = untokenize(src).strip()
 			return src
 
-def start_block(t):
-	t.lexer.block = t.lexer.depth
-
-def end_block(t):
-	return t.lexer.block >= t.lexer.depth
-
 def t_tag_doctype_comment_INITIAL_LF(t):
 	r'\n([\s]*\n)?'
 	t.lexer.lineno += t.value.count('\n')
@@ -94,43 +89,54 @@ def t_tag_doctype_comment_INITIAL_LF(t):
 	t.lexer.push_state('tabs')
 	return t
 
-def t_tabs_other(t):
-	r'[^ \t]'
-	t.lexer.lexpos -= len(t.value)
-	t.lexer.depth = 0
-	t.lexer.pop_state()
-
-def t_tabs_indent(t):
-	r'[ \t]+'
-	if t.lexer.type == None:
-		t.lexer.type = t.value[0]
-		t.lexer.length = len(t.value)
-	
-	if any(c != t.lexer.type for c in t.value):
-		raise Exception('mixed indentation')
-	
-	depth = int(len(t.value) / t.lexer.length)
-	if len(t.value) % t.lexer.length > 0 or depth - t.lexer.depth > 1:
-		raise Exception('invalid indentation')
-	
-	t.lexer.depth = depth
-	t.lexer.pop_state()
-
-def t_silentcomment(t):
-	r'-\#[^\n]*'
-	start_block(t)
-	t.lexer.push_state('silent')
-
-def t_silent_LF(t):
+def t_silent_filter_LF(t):
 	r'\n([\s]*\n)?'
 	t.lexer.lineno += t.value.count('\n')
 	t.lexer.push_state('tabs')
 
+def t_tabs_other(t):
+	r'[^ \t]'
+	t.lexer.pop_state()
+	if not t.lexer.block is None:
+		t.lexer.block = None
+		t.lexer.begin('INITIAL')
+	t.lexer.lexpos -= len(t.value)
+	t.lexer.depth = 0
+
+def t_tabs_indent(t):
+	r'[ \t]+'
+	t.lexer.pop_state()
+	if t.lexer.type == None:
+		t.lexer.type = t.value[0]
+		t.lexer.length = len(t.value)
+	
+	if not t.lexer.block is None:
+		if len(t.value) / t.lexer.length < t.lexer.block:
+			t.lexer.block = None
+			t.lexer.begin('INITIAL')
+		else:
+			tablen = t.lexer.length * t.lexer.block
+			if tablen < len(t.value):
+				t.lexer.lexpos -= (len(t.value) - tablen)
+				t.value = t.value[:tablen]
+	
+	if any(c != t.lexer.type for c in t.value):
+		raise Exception('mixed indentation')
+	
+	(d,r) = divmod(len(t.value), t.lexer.length)
+	if r > 0 or d - t.lexer.depth > 1:
+		raise Exception('invalid indentation')
+	
+	t.lexer.depth = d
+
+def t_silentcomment(t):
+	r'-\#[^\n]*'
+	t.lexer.block = t.lexer.depth + 1
+	t.lexer.push_state('silent')
+
 def t_silent_other(t):
 	r'[^\n]+'
-	if end_block(t):
-		t.lexer.lexpos -= len(t.value)
-		t.lexer.pop_state()
+	pass
 
 def t_DOCTYPE(t):
 	r'!!!'
@@ -246,23 +252,14 @@ def t_multi_VALUE(t):
 
 def t_FILTER(t):
 	r':[^\n]+'
+	t.lexer.block = t.lexer.depth + 1
 	t.value = t.value[1:]
-	start_block(t)
 	t.lexer.push_state('filter')
 	return t
 
-def t_filter_LF(t):
-	r'\n([\s]*\n)?'
-	t.lexer.lineno += t.value.count('\n')
-	t.lexer.push_state('tabs')
-
 def t_filter_FILTER(t):
 	r'[^\n]+'
-	if end_block(t):
-		t.lexer.lexpos -= len(t.value)
-		t.lexer.pop_state()
-	else:
-		return t
+	return t
 
 def t_ANY_error(t):
 	sys.stderr.write('Illegal character(s) [%s]\n' % t.value)

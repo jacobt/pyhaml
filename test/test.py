@@ -110,6 +110,7 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('<p foo="&quot;bar&quot;"></p>\n', to_html("%p{'foo':'\"bar\"'}"))
 	
 	def testsilent(self):
+		self.assertEqual('\n', to_html('-#'))
 		self.assertEqual('<p></p>\n<p></p>\n', to_html("%p\n-# foo\n%p"))
 		self.assertEqual('<p></p>\n<p></p>\n', to_html("%p\n-# foo\n  bar\n    baz\n%p"))
 		self.assertEqual('<div>\n  <span>foo</span>\n</div>\n', to_html("%div\n  %span foo\n  -# foo\n    bar\n      baz"))
@@ -232,7 +233,10 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('<p>\n  multi line\n</p>\n<p></p>\n', to_html('%p\n multi |\n line |\n%p'))
 	
 	def testfilters(self):
+		self.assertEqual('\n', to_html(':plain'))
 		self.assertEqual('foo\n  bar\nbaz\n', to_html(':plain\n  foo\n    bar\n  baz'))
+		self.assertEqual('<div></div>\n', to_html(':plain\n%div'))
+		self.assertRaises(Exception, partial(to_html, ':foo\n foo'))
 	
 	def testbasicdiff(self):
 		self.diff('basic')
