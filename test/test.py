@@ -93,7 +93,8 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('''<p foo="{'foo': 'bar'}">val</p>\n''', to_html("%p{'foo':{'foo':'bar'}} val"))
 	
 	def testcrlf(self):
-		self.assertEqual('<p>foo</p>\n<p>bar</p>\n<p>baz</p>\n<p>boom</p>\n', to_html('%p foo\r\n%p bar\r\n%p baz\n\r%p boom'))
+		self.assertEqual('<p>foo</p>\n<p>bar</p>\n<p>baz</p>\n<p>boom</p>\n',
+			to_html('%p foo\r\n%p bar\r\n%p baz\n\r%p boom'))
 	
 	def testscript(self):
 		self.assertEqual('<p>foo</p>\n', to_html("%p= 'foo'"))
@@ -237,6 +238,9 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('foo\n  bar\nbaz\n', to_html(':plain\n  foo\n    bar\n  baz'))
 		self.assertEqual('<div></div>\n', to_html(':plain\n%div'))
 		self.assertRaises(Exception, partial(to_html, ':foo\n foo'))
+		self.assertEqual(
+			'<script type="text/javascript">\n  //<![CDATA[\n    var foo;\n  //]]>\n</script>\n',
+			to_html(':javascript\n\tvar foo;'))
 	
 	def testbasicdiff(self):
 		self.diff('basic')

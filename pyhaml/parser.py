@@ -70,15 +70,8 @@ class haml_obj(object):
 
 class Filter(haml_obj):
 	
-	types = (
-		'plain',
-	)
-	
-	def __init__(self, parser, type):
+	def __init__(self, parser):
 		haml_obj.__init__(self, parser)
-		if not type in Filter.types:
-			self.error('Invalid filter: %s' % type)
-		self.type = type
 		self.lines = []
 	
 	def addline(self, l):
@@ -86,7 +79,21 @@ class Filter(haml_obj):
 	
 	def open(self):
 		for l in self.lines:
-			self.push(l, literal=1)
+			self.push(l, literal=True)
+
+class JavascriptFilter(Filter):
+	
+	def open(self):
+		self.push('<script type="text/javascript">', literal=True)
+		self.entab()
+		self.push('//<![CDATA[', literal=True)
+		self.entab()
+		for l in self.lines:
+			self.push(l, literal=True)
+		self.detab()
+		self.push('//]]>', literal=True)
+		self.detab()
+		self.push('</script>', literal=True)
 
 class Content(haml_obj):
 	
@@ -340,7 +347,13 @@ def p_filter(p):
 	'''filter : filter FILTER
 				| FILTER'''
 	if len(p) == 2:
-		p[0] = Filter(p.parser, p[1])
+		types = {
+			'plain': Filter,
+			'javascript': JavascriptFilter,
+		}
+		if not p[1] in types:
+			raise Exception('Invalid filter: %s' % type)
+		p[0] = types[p[1]](p.parser)
 	elif len(p) == 3:
 		p[0] = p[1]
 		p[0].addline(p[2])
