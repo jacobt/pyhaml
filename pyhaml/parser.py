@@ -116,7 +116,7 @@ class Script(haml_obj):
 		self.escape = False
 		if self.type == '&=':
 			self.escape = True
-		elif self.type == '=' and parser.op.escape:
+		elif self.type == '=' and parser.op.escape_html:
 			self.escape = True
 	
 	def open(self):
@@ -190,31 +190,32 @@ class Comment(haml_obj):
 
 class Tag(haml_obj):
 	
-	auto_close = (
-		'script',
+	preserve = (
+		'textarea',
+		'pre',
 	)
 	
-	self_close = (
+	autoclose = (
+		'meta',
 		'img',
 		'input',
 		'link',
 		'br',
+		'hr',
+		'area',
+		'param',
+		'col',
+		'base',
 	)
 	
-	def __init__(self, parser, tagname='', id='', classname=''):
+	def __init__(self, parser):
 		haml_obj.__init__(self, parser)
-		self.attrs = {}
-		if id:
-			self.attrs['id'] = id
-		if classname:
-			self.attrs['class'] = classname
 		self.dict = ''
-		self.tagname = tagname
+		self.attrs = {}
+		self.tagname = 'div'
 		self.inner = False
 		self.outer = False
-		self.self_close = False
-		if tagname == '':
-			self.tagname = 'div'
+		self.selfclose = False
 	
 	def addclass(self, s):
 		if not 'class' in self.attrs:
@@ -222,58 +223,38 @@ class Tag(haml_obj):
 		else:
 			self.attrs['class'] += ' ' + s
 	
-	def is_last(self):
-		return self.parser.last_obj is self
-	
-	def auto_closing(self):
-		if self.value:
-			return True
-		elif self.tagname in Tag.auto_close and self.is_last():
-			return True
-		elif self.parser.last_obj is self:
-			return True
-		return False
-	
-	def self_closing(self):
-		if self.value:
-			return False
-		elif self.self_close:
-			return True
-		elif self.tagname in Tag.self_close:
-			return True
-		return False
+	def auto(self):
+		return (not self.value and
+			(self.selfclose or self.tagname in Tag.autoclose))
 	
 	def open(self):
-		if self.self_close and self.value:
+		if self.selfclose and self.value:
 			self.error('self-closing tags cannot have content')
 		
-		self.push('<' + self.tagname,
-			inner=self.inner,
-			outer=self.outer,
-			literal=True)
+		self.push('<' + self.tagname, inner=self.inner, outer=self.outer, literal=True)
 		self.script('_haml.attrs(%s, %s)' % (self.dict, repr(self.attrs)))
 		
+		if self.auto():
+			self.no_nesting()
+			self.write('/', literal=True)
+		
+		self.write('>', literal=True)
+		
 		if self.value:
-			self.write('>', literal=True)
 			if isinstance(self.value, Script):
 				script = self.value
 				self.write(script.value, escape=script.escape)
 			else:
 				self.write(self.value, literal=True)
-		else:
-			if self.self_closing():
-				self.no_nesting()
-				self.write('/', literal=True)
-			self.write('>', literal=True)
 	
 	def close(self):
-		if self.value or self.self_close:
+		if self.value or self.selfclose:
 			self.no_nesting()
 		
-		if self.auto_closing() and not self.self_closing():
-			self.write('</%s>' % self.tagname, literal=True)
+		if self.value or self is self.parser.last_obj and not self.auto():
+			self.write('</' + self.tagname + '>', literal=True)
 		
-		if self.auto_closing() or self.self_closing():
+		if self.auto() or self.value or self is self.parser.last_obj:
 			self.parser.trim_next = self.outer
 		else:
 			self.push('</' + self.tagname + '>', inner=self.outer, outer=self.inner, literal=True)
@@ -407,7 +388,7 @@ def p_element_tag_trim_dict_value(p):
 	p[0].inner = '<' in p[2]
 	p[0].outer = '>' in p[2]
 	p[0].dict = p[3]
-	p[0].self_close = p[4]
+	p[0].selfclose = p[4]
 	p[0].value = p[5]
 
 def p_selfclose(p):
@@ -450,19 +431,24 @@ def p_dict(p):
 
 def p_tag_tagname(p):
 	'tag : TAGNAME'
-	p[0] = Tag(p.parser, tagname=p[1])
+	p[0] = Tag(p.parser)
+	p[0].tagname = p[1]
 
 def p_tag_id(p):
 	'tag : ID'
-	p[0] = Tag(p.parser, id=p[1])
+	p[0] = Tag(p.parser)
+	p[0].attrs['id'] = p[1]
 
 def p_tag_class(p):
 	'tag : CLASSNAME'
-	p[0] = Tag(p.parser, classname=p[1])
+	p[0] = Tag(p.parser)
+	p[0].addclass(p[1])
 
 def p_tag_tagname_id(p):
 	'tag : TAGNAME ID'
-	p[0] = Tag(p.parser, tagname=p[1], id=p[2])
+	p[0] = Tag(p.parser)
+	p[0].tagname = p[1]
+	p[0].attrs['id'] = p[2]
 
 def p_tag_tag_class(p):
 	'tag : tag CLASSNAME'

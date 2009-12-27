@@ -51,11 +51,11 @@ class engine(object):
 		default='html5',
 		dest='format')
 
-	optparser.add_option('-e', '--escape',
+	optparser.add_option('-e', '--escape_html',
 		help='sanitize values by default',
 		action='store_true',
-		dest='escape',
-		default=False)
+		dest='escape_html',
+		default=True)
 	
 	optparser.add_option('-b', '--batch',
 		help='batch compile haml files',

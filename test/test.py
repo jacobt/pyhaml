@@ -149,14 +149,14 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('foo &gt; bar\n', to_html("&='foo > bar'"))
 	
 	def testescapeopt(self):
-		self.assertEqual('cheese & crackers\n', to_html("='cheese & crackers'", escape=False))
-		self.assertEqual('cheese &amp; crackers\n', to_html("='cheese & crackers'", escape=True))
-		self.assertEqual('foo &gt; bar\n', to_html("= 'foo > bar'", escape=True))
-		self.assertEqual('foo < bar\n', to_html("= 'foo < bar'", escape=False))
+		self.assertEqual('cheese & crackers\n', to_html("='cheese & crackers'", escape_html=False))
+		self.assertEqual('cheese &amp; crackers\n', to_html("='cheese & crackers'", escape_html=True))
+		self.assertEqual('foo &gt; bar\n', to_html("= 'foo > bar'", escape_html=True))
+		self.assertEqual('foo < bar\n', to_html("= 'foo < bar'", escape_html=False))
 	
 	def testnosanitize(self):
-		self.assertEqual('<&>\n', to_html("!='<&>'", escape=True))
-		self.assertEqual('<&>\n', to_html("!='<&>'", escape=False))
+		self.assertEqual('<&>\n', to_html("!='<&>'", escape_html=True))
+		self.assertEqual('<&>\n', to_html("!='<&>'", escape_html=False))
 	
 	def testbackslashstart(self):
 		self.assertEqual('#\n', to_html('\\#'))
