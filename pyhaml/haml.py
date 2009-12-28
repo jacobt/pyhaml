@@ -63,6 +63,12 @@ class engine(object):
 		dest='batch',
 		default=False)
 	
+	optparser.add_option('-s', '--suppress_eval',
+		help='suppress script evaluation',
+		action='store_true',
+		dest='suppress_eval',
+		default=False)
+	
 	def __init__(self):
 		self.parser = yacc.yacc(
 			module=parser,

@@ -86,13 +86,15 @@ class JavascriptFilter(Filter):
 	def open(self):
 		self.push('<script type="text/javascript">', literal=True)
 		self.entab()
-		self.push('//<![CDATA[', literal=True)
-		self.entab()
+		if self.parser.op.format == 'xhtml':
+			self.push('//<![CDATA[', literal=True)
+			self.entab()
 		for l in self.lines:
 			self.push(l, literal=True)
 		self.detab()
-		self.push('//]]>', literal=True)
-		self.detab()
+		if self.parser.op.format == 'xhtml':
+			self.push('//]]>', literal=True)
+			self.detab()
 		self.push('</script>', literal=True)
 
 class Content(haml_obj):
@@ -341,14 +343,18 @@ def p_filter(p):
 
 def p_silentscript(p):
 	'''silentscript : SILENTSCRIPT'''
+	if p.parser.op.suppress_eval:
+		raise Exception('python evaluation is not allowed')
 	p[0] = SilentScript(p.parser, value=p[1])
 
 def p_script(p):
 	'''script : TYPE SCRIPT'''
+	if p.parser.op.suppress_eval:
+		p[2] = '""'
 	p[0] = Script(p.parser, type=p[1], value=p[2])
 
 def p_content(p):
-	'content : value'
+	'''content : value'''
 	p[0] = Content(p.parser, p[1])
 
 def p_doctype(p):
@@ -383,7 +389,7 @@ def p_comment(p):
 		p[0].value = p[2]
 
 def p_element_tag_trim_dict_value(p):
-	'element : tag trim dict selfclose text'
+	'''element : tag trim dict selfclose text'''
 	p[0] = p[1]
 	p[0].inner = '<' in p[2]
 	p[0].outer = '>' in p[2]
@@ -424,7 +430,7 @@ def p_value(p):
 def p_dict(p):
 	'''dict : 
 			| DICT '''
-	if len(p) == 1:
+	if len(p) == 1 or p.parser.op.suppress_eval:
 		p[0] = '{}' 
 	else:
 		p[0] = p[1]

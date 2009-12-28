@@ -199,6 +199,7 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('<script src="foo">\n  bar\n</script>\n', to_html("%script{'src':'foo'}\n bar"))
 		self.assertEqual('<link rel="stylesheet"/>\n', to_html("%link{'rel':'stylesheet'}"))
 		self.assertEqual('<link rel="stylesheet">foo</link>\n', to_html("%link{'rel':'stylesheet'} foo"))
+		self.assertEqual('<meta content="text/html"/>\n', to_html("%meta{'content':'text/html'}"))
 	
 	def testillegalnesting(self):
 		self.assertRaises(Exception, partial(to_html, '!!!\n %p'))
@@ -240,7 +241,15 @@ class TestHaml(unittest.TestCase):
 		self.assertRaises(Exception, partial(to_html, ':foo\n foo'))
 		self.assertEqual(
 			'<script type="text/javascript">\n  //<![CDATA[\n    var foo;\n  //]]>\n</script>\n',
+			to_html(':javascript\n\tvar foo;', format='xhtml'))
+		self.assertEqual(
+			'<script type="text/javascript">\n  var foo;\n</script>\n',
 			to_html(':javascript\n\tvar foo;'))
+	
+	def testsuppress(self):
+		self.assertEqual('<p></p>\n', to_html('%p = "foo"', suppress_eval=True))
+		self.assertEqual('<p></p>\n', to_html("%p{'foo':'bar'}", suppress_eval=True))
+		self.assertRaises(Exception, partial(to_html, '-foo="foo"', suppress_eval=True))
 	
 	def testbasicdiff(self):
 		self.diff('basic')
