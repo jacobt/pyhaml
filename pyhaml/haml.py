@@ -131,7 +131,8 @@ class engine(object):
 		for a in args:
 			attrs.update(a)
 		for k,v in attrs.items():
-			self.write(' %s="%s"' % (k, str(v).replace('"', '&quot;')))
+			if v != None:
+				self.write(' %s="%s"' % (k, str(v).replace('"', '&quot;')))
 	
 	def compile(self, s):
 		self.parser.__dict__.update({

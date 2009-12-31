@@ -46,7 +46,11 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('<img id="foo" class="bar baz"/>\n', to_html("%img#foo.bar.baz"))
 	
 	def testattrs(self):
+		self.assertEqual('<p a="b"></p>\n', to_html("%p{ 'a':'b', 'c':None }"))
 		self.assertEqual('<div style="ugly" class="atlantis"></div>\n', to_html(".atlantis{'style' : 'ugly'}"))
+		self.assertEqual('<p foo="bar}"></p>\n', to_html("%p{'foo':'bar}'}"))
+		self.assertEqual('<p foo="{bar"></p>\n', to_html("%p{'foo':'{bar'}"))
+		self.assertEqual('<p foo="bar"></p>\n', to_html("%p{'foo':'''bar'''}"))
 	
 	def testoneline(self):
 		self.assertEqual('<p>foo</p>\n', to_html('%p foo'))
@@ -77,11 +81,6 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual(html, to_html('%p\n  foo\n%q\n  bar\n  %a\n    baz'))
 		self.assertEqual(html, to_html('%p\n foo\n%q\n bar\n %a\n  baz'))
 		self.assertEqual(html, to_html('%p\n\tfoo\n%q\n\tbar\n\t%a\n\t\tbaz'))
-	
-	def testattrs(self):
-		self.assertEqual('<p foo="bar}"></p>\n', to_html("%p{'foo':'bar}'}"))
-		self.assertEqual('<p foo="{bar"></p>\n', to_html("%p{'foo':'{bar'}"))
-		self.assertEqual('<p foo="bar"></p>\n', to_html("%p{'foo':'''bar'''}"))
 	
 	def testmultilineattrs(self):
 		self.assertEqual('<p foo="bar">val</p>\n', to_html("%p{  \n   'foo'  :  \n  'bar'  \n } val"))
@@ -249,6 +248,7 @@ class TestHaml(unittest.TestCase):
 	def testsuppress(self):
 		self.assertEqual('<p></p>\n', to_html('%p = "foo"', suppress_eval=True))
 		self.assertEqual('<p></p>\n', to_html("%p{'foo':'bar'}", suppress_eval=True))
+		self.assertEqual('\n', to_html("= 'foo'", suppress_eval=True))
 		self.assertRaises(Exception, partial(to_html, '-foo="foo"', suppress_eval=True))
 	
 	def testbasicdiff(self):
