@@ -192,24 +192,6 @@ class Comment(haml_obj):
 
 class Tag(haml_obj):
 	
-	preserve = (
-		'textarea',
-		'pre',
-	)
-	
-	autoclose = (
-		'meta',
-		'img',
-		'input',
-		'link',
-		'br',
-		'hr',
-		'area',
-		'param',
-		'col',
-		'base',
-	)
-	
 	def __init__(self, parser):
 		haml_obj.__init__(self, parser)
 		self.dict = ''
@@ -227,7 +209,7 @@ class Tag(haml_obj):
 	
 	def auto(self):
 		return (not self.value and
-			(self.selfclose or self.tagname in Tag.autoclose))
+			(self.selfclose or self.tagname in self.parser.op.autoclose))
 	
 	def open(self):
 		if self.selfclose and self.value:

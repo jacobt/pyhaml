@@ -69,6 +69,31 @@ class engine(object):
 		dest='suppress_eval',
 		default=False)
 	
+	optparser.add_option('-p', '--preserve',
+		help='preserve whitespace tags',
+		action='append',
+		type='str',
+		dest='preserve',
+		default=['pre', 'textarea'])
+	
+	optparser.add_option('-a', '--autoclose',
+		help='autoclose tags',
+		action='append',
+		type='str',
+		dest='autoclose',
+		default=[
+			'meta',
+			'img',
+			'input',
+			'link',
+			'br',
+			'hr',
+			'area',
+			'param',
+			'col',
+			'base',
+		])
+	
 	def __init__(self):
 		self.parser = yacc.yacc(
 			module=parser,
