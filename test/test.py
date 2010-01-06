@@ -251,6 +251,10 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('\n', to_html("= 'foo'", suppress_eval=True))
 		self.assertRaises(Exception, partial(to_html, '-foo="foo"', suppress_eval=True))
 	
+	#def testpreserve(self):
+	#	self.assertEqual('<pre><code></code></pre>\n', to_html('%pre\n  %code'))
+	#	self.assertEqual('<pre>a\nb\nc</pre>\n', to_html('%pre\n  a\n  b\n  c'))
+	
 	def testbasicdiff(self):
 		self.diff('basic')
 	

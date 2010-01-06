@@ -74,9 +74,6 @@ class Filter(haml_obj):
 		haml_obj.__init__(self, parser)
 		self.lines = []
 	
-	def addline(self, l):
-		self.lines.append(l)
-	
 	def open(self):
 		for l in self.lines:
 			self.push(l, literal=True)
@@ -250,11 +247,9 @@ def deblock(parser):
 	parser.depth -= 1
 
 def push(parser, s, inner=False, outer=False, **kwargs):
-	if outer or parser.trim_next:
-		write(parser, s, **kwargs)
-	else:
+	if not outer and not parser.trim_next:
 		script(parser, '_haml.indent()')
-		write(parser, s, **kwargs)
+	write(parser, s, **kwargs)
 	parser.trim_next = inner
 
 def write(parser, s, literal=False, escape=False):
@@ -321,7 +316,7 @@ def p_filter(p):
 		p[0] = types[p[1]](p.parser)
 	elif len(p) == 3:
 		p[0] = p[1]
-		p[0].addline(p[2])
+		p[0].lines.append(p[2])
 
 def p_silentscript(p):
 	'''silentscript : SILENTSCRIPT'''
