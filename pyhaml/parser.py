@@ -215,8 +215,7 @@ class Tag(haml_obj):
 		self.push('<' + self.tagname, inner=self.inner, outer=self.outer, literal=True)
 		self.script('_haml.attrs(%s, %s)' % (self.dict, repr(self.attrs)))
 		
-		if self.auto():
-			self.no_nesting()
+		if self.auto() and self.parser.op.format == 'xhtml':
 			self.write('/', literal=True)
 		
 		self.write('>', literal=True)

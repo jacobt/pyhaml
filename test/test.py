@@ -43,7 +43,7 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('<div class="class"></div>\n', to_html(".class"))
 		self.assertEqual('<div class="foo bar"></div>\n', to_html(".foo.bar"))
 		self.assertEqual('<div id="foo" class="bar"></div>\n', to_html("#foo.bar"))
-		self.assertEqual('<img id="foo" class="bar baz"/>\n', to_html("%img#foo.bar.baz"))
+		self.assertEqual('<img id="foo" class="bar baz">\n', to_html("%img#foo.bar.baz"))
 	
 	def testattrs(self):
 		self.assertEqual('<p a="b"></p>\n', to_html("%p{ 'a':'b', 'c':None }"))
@@ -68,13 +68,10 @@ class TestHaml(unittest.TestCase):
 	
 	def testhashwithnewline(self):
 		self.assertEqual('<p a="b" c="d">foo</p>\n', to_html("%p{'a' : 'b',\n   'c':'d'} foo"))
-		self.assertEqual('<p a="b" c="d"/>\n', to_html("%p{'a' : 'b',\n    'c' : 'd'}/"))
+		self.assertEqual('<p a="b" c="d">\n', to_html("%p{'a' : 'b',\n    'c' : 'd'}/"))
 	
 	def testtrim(self):
-		self.assertEqual('<img/><img/><img/>\n', to_html('%img\n%img>\n%img'))
-	
-	def testselfclose(self):
-		self.assertEqual('<sandwich/>\n', to_html('%sandwich/'))
+		self.assertEqual('<img><img><img>\n', to_html('%img\n%img>\n%img'))
 	
 	def testflextabs(self):
 		html = '<p>\n  foo\n</p>\n<q>\n  bar\n  <a>\n    baz\n  </a>\n</q>\n'
@@ -105,8 +102,8 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('<p>multiline</p>\n', to_html("%p=('multi'\n'line')"))
 	
 	def testescapeattrs(self):
-		self.assertEqual('<img src="foo.com?bar&baz=&quot;&quot;"/>\n', to_html("%img{'src':'foo.com?bar&baz=\"\"'}"))
-		self.assertEqual('<img foo="bar&baz"/>\n', to_html("%img{'foo':'bar&baz'}"))
+		self.assertEqual('<img src="foo.com?bar&baz=&quot;&quot;">\n', to_html("%img{'src':'foo.com?bar&baz=\"\"'}"))
+		self.assertEqual('<img foo="bar&baz">\n', to_html("%img{'foo':'bar&baz'}"))
 		self.assertEqual('<p foo="&quot;bar&quot;"></p>\n', to_html("%p{'foo':'\"bar\"'}"))
 	
 	def testsilent(self):
@@ -192,13 +189,15 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('<p>\n  <a></a>\n</p>\n', to_html('-def foo():\n %a\n%p\n - foo()'))
 		self.assertEqual('foo\n', to_html('-foo="foo"\n-def bar():\n =foo\n-bar()'))
 
-	def testselfcloseautoclose(self):
+	def testautoclose(self):
+		self.assertEqual('<sandwich/>\n', to_html('%sandwich/', format='xhtml'))
 		self.assertEqual('<script src="foo"></script>\n', to_html("%script{'src':'foo'}"))
 		self.assertEqual('<script src="foo">fallback</script>\n', to_html("%script{'src':'foo'} fallback"))
 		self.assertEqual('<script src="foo">\n  bar\n</script>\n', to_html("%script{'src':'foo'}\n bar"))
-		self.assertEqual('<link rel="stylesheet"/>\n', to_html("%link{'rel':'stylesheet'}"))
+		self.assertEqual('<link rel="stylesheet">\n', to_html("%link{'rel':'stylesheet'}"))
 		self.assertEqual('<link rel="stylesheet">foo</link>\n', to_html("%link{'rel':'stylesheet'} foo"))
-		self.assertEqual('<meta content="text/html"/>\n', to_html("%meta{'content':'text/html'}"))
+		self.assertEqual('<meta content="text/html">\n', to_html("%meta{'content':'text/html'}"))
+		self.assertEqual('<input type="text"/>\n', to_html("%input{ 'type':'text' }", format='xhtml'))
 	
 	def testillegalnesting(self):
 		self.assertRaises(Exception, partial(to_html, '!!!\n %p'))
