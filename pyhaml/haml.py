@@ -149,7 +149,7 @@ class engine(object):
 		self.depth -= 1
 	
 	def indent(self):
-		self.write('\n' + '  ' * self.depth)
+		self.write('  ' * self.depth)
 	
 	def write(self, s):
 		self.html.append(s)

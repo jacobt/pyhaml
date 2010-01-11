@@ -188,7 +188,7 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('<p>0</p>\n<p>1</p>\n', to_html('-def foo(n):\n %p=n\n-for i in range(2):\n -foo(i)'))
 		self.assertEqual('<p>\n  <a></a>\n</p>\n', to_html('-def foo():\n %a\n%p\n - foo()'))
 		self.assertEqual('foo\n', to_html('-foo="foo"\n-def bar():\n =foo\n-bar()'))
-
+	
 	def testautoclose(self):
 		self.assertEqual('<sandwich/>\n', to_html('%sandwich/', format='xhtml'))
 		self.assertEqual('<script src="foo"></script>\n', to_html("%script{'src':'foo'}"))
@@ -253,7 +253,7 @@ class TestHaml(unittest.TestCase):
 	def testpreserve(self):
 		self.assertEqual('<pre><code></code></pre>\n', to_html('%pre\n %code'))
 		self.assertEqual('<div>\n  <pre></pre>\n</div>\n', to_html('%div\n %pre'))
-	#	self.assertEqual('<pre>a\nb\nc</pre>\n', to_html('%pre\n  a\n  b\n  c'))
+		self.assertEqual('<pre>a\nb\nc</pre>\n', to_html('%pre\n  a\n  b\n  c'))
 	
 	def testwrapper(self):
 		self.assertEqual("<div class='foo'></div>\n", to_html('.foo', attr_wrapper="'"))

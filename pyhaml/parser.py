@@ -44,6 +44,7 @@ class haml_obj(object):
 	
 	def push(self, s, inner=False, outer=False, **kwargs):
 		if not (outer or self.parser.trim_next or self.parser.preserve):
+			self.script("_haml.write('\\n')")
 			self.script('_haml.indent()')
 		self.write(s, **kwargs)
 		self.parser.trim_next = inner
