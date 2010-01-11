@@ -215,17 +215,19 @@ class Tag(haml_obj):
 		self.push('<' + self.tagname, inner=self.inner, outer=self.outer, literal=True)
 		self.script('_haml.attrs(%s, %s)' % (self.dict, repr(self.attrs)))
 		
+		s = '>'
 		if self.auto() and self.parser.op.format == 'xhtml':
-			self.write('/', literal=True)
-		
-		self.write('>', literal=True)
+			s = '/>'
+		self.write(s, literal=True)
 		
 		if self.value:
 			if isinstance(self.value, Script):
-				script = self.value
-				self.write(script.value, escape=script.escape)
+				self.write(self.value.value, escape=self.value.escape)
 			else:
 				self.write(self.value, literal=True)
+		
+		if self.tagname in self.parser.op.preserve:
+			self.parser.preserve += 1
 	
 	def close(self):
 		if self.value or self.selfclose:
@@ -238,6 +240,9 @@ class Tag(haml_obj):
 			self.parser.trim_next = self.outer
 		else:
 			self.push('</' + self.tagname + '>', inner=self.outer, outer=self.inner, literal=True)
+		
+		if self.tagname in self.parser.op.preserve:
+			self.parser.preserve -= 1
 
 def enblock(parser):
 	parser.depth += 1
@@ -246,7 +251,7 @@ def deblock(parser):
 	parser.depth -= 1
 
 def push(parser, s, inner=False, outer=False, **kwargs):
-	if not outer and not parser.trim_next:
+	if not outer and not parser.trim_next and not parser.preserve:
 		script(parser, '_haml.indent()')
 	write(parser, s, **kwargs)
 	parser.trim_next = inner

@@ -102,9 +102,9 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('<p>multiline</p>\n', to_html("%p=('multi'\n'line')"))
 	
 	def testescapeattrs(self):
-		self.assertEqual('<img src="foo.com?bar&baz=&quot;&quot;">\n', to_html("%img{'src':'foo.com?bar&baz=\"\"'}"))
+		self.assertEqual('<img src="foo.com?bar=&apos;&apos;">\n', to_html("%img{'src':'foo.com?bar=\"\"'}"))
 		self.assertEqual('<img foo="bar&baz">\n', to_html("%img{'foo':'bar&baz'}"))
-		self.assertEqual('<p foo="&quot;bar&quot;"></p>\n', to_html("%p{'foo':'\"bar\"'}"))
+		self.assertEqual('<p foo="&apos;"></p>\n', to_html("%p{'foo':'\"'}"))
 	
 	def testsilent(self):
 		self.assertEqual('\n', to_html('-#'))
@@ -250,9 +250,14 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('\n', to_html("= 'foo'", suppress_eval=True))
 		self.assertRaises(Exception, partial(to_html, '-foo="foo"', suppress_eval=True))
 	
-	#def testpreserve(self):
-	#	self.assertEqual('<pre><code></code></pre>\n', to_html('%pre\n  %code'))
+	def testpreserve(self):
+		self.assertEqual('<pre><code></code></pre>\n', to_html('%pre\n %code'))
+		self.assertEqual('<div>\n  <pre></pre>\n</div>\n', to_html('%div\n %pre'))
 	#	self.assertEqual('<pre>a\nb\nc</pre>\n', to_html('%pre\n  a\n  b\n  c'))
+	
+	def testwrapper(self):
+		self.assertEqual("<div class='foo'></div>\n", to_html('.foo', attr_wrapper="'"))
+		self.assertEqual("<div class=foo></div>\n", to_html('.foo', attr_wrapper=''))
 	
 	def testbasicdiff(self):
 		self.diff('basic')

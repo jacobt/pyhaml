@@ -43,6 +43,12 @@ class engine(object):
 		action='store_true',
 		dest='debug',
 		default=False)
+	
+	optparser.add_option('-w', '--attr_wrapper',
+		help='attribute wrapper character',
+		action='store',
+		dest='attr_wrapper',
+		default='"')
 
 	optparser.add_option('-f', '--format',
 		help='(html5|html4|xhtml)',
@@ -152,12 +158,15 @@ class engine(object):
 		self.write(cgi.escape(s, True))
 	
 	def attrs(self, *args):
+		w = self.op.attr_wrapper
 		attrs = {}
 		for a in args:
 			attrs.update(a)
 		for k,v in attrs.items():
 			if v != None:
-				self.write(' %s="%s"' % (k, str(v).replace('"', '&quot;')))
+				if w in ('"',"'"):
+					v = str(v).replace(w, '&apos;')
+				self.write(' %s=%s%s%s' % (k,w,v,w))
 	
 	def compile(self, s):
 		self.parser.__dict__.update({
@@ -168,6 +177,7 @@ class engine(object):
 			'debug': self.op.debug,
 			'op': self.op,
 			'to_close': [],
+			'preserve': 0,
 		})
 		
 		self.lexer.begin('INITIAL')
