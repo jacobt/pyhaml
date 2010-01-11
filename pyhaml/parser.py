@@ -272,15 +272,9 @@ def p_haml_doc(p):
 		close(p.parser.to_close.pop())
 
 def p_doc(p):
-	'doc : obj'
-	pass
-
-def p_doc_obj(p):
-	'doc : doc obj'
-	pass
-
-def p_doc_indent_obj(p):
-	'doc : doc LF obj'
+	'''doc : obj
+			| doc obj
+			| doc LF obj'''
 	pass
 
 def p_obj(p):
