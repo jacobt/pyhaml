@@ -96,7 +96,8 @@ class Filter(haml_obj):
 class JavascriptFilter(Filter):
 	
 	def open(self):
-		self.push('<script type="text/javascript">', literal=True)
+		w = self.parser.op.attr_wrapper
+		self.push('<script type=%stext/javascript%s>' % (w,w), literal=True)
 		self.entab()
 		if self.parser.op.format == 'xhtml':
 			self.push('//<![CDATA[', literal=True)

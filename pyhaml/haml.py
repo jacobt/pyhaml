@@ -48,7 +48,7 @@ class engine(object):
 		help='attribute wrapper character',
 		action='store',
 		dest='attr_wrapper',
-		default='"')
+		default="'")
 
 	optparser.add_option('-f', '--format',
 		help='(html5|html4|xhtml)',
