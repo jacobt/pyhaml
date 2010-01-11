@@ -41,19 +41,33 @@ class haml_obj(object):
 	
 	def __init__(self, parser):
 		self.parser = parser
-		self.__dict__.update({
-			'push': partial(push, parser),
-			'write': partial(write, parser),
-			'script': partial(script, parser),
-			'enblock': partial(enblock, parser),
-			'deblock': partial(deblock, parser),
-		})
+	
+	def push(self, s, inner=False, outer=False, **kwargs):
+		if not (outer or self.parser.trim_next or self.parser.preserve):
+			self.script('_haml.indent()')
+		self.write(s, **kwargs)
+		self.parser.trim_next = inner
+	
+	def write(self, s, literal=False, escape=False):
+		s = repr(s) if literal else 'str(%s)' % s
+		f = 'escape' if escape else 'write'
+		self.script('_haml.%s(%s)' % (f, s))
+	
+	def script(self, s):
+		pre = '\t' * self.parser.depth
+		self.parser.src += [pre + s]
+	
+	def enblock(self):
+		self.parser.depth += 1
+	
+	def deblock(self):
+		self.parser.depth -= 1
 	
 	def entab(self):
-		script(self.parser, '_haml.entab()')
+		self.script('_haml.entab()')
 	
 	def detab(self):
-		script(self.parser, '_haml.detab()')
+		self.script('_haml.detab()')
 	
 	def open(self):
 		pass
@@ -244,38 +258,9 @@ class Tag(haml_obj):
 		if self.tagname in self.parser.op.preserve:
 			self.parser.preserve -= 1
 
-def enblock(parser):
-	parser.depth += 1
-
-def deblock(parser):
-	parser.depth -= 1
-
-def push(parser, s, inner=False, outer=False, **kwargs):
-	if not outer and not parser.trim_next and not parser.preserve:
-		script(parser, '_haml.indent()')
-	write(parser, s, **kwargs)
-	parser.trim_next = inner
-
-def write(parser, s, literal=False, escape=False):
-	s = repr(s) if literal else 'str(%s)' % s
-	f = '_haml.escape' if escape else '_haml.write'
-	script(parser, '%s(%s)' % (f, s))
-
-def script(parser, s):
-	pre = '\t' * parser.depth
-	parser.src += [pre + s]
-
 def close(obj):
 	obj.detab()
 	obj.close()
-
-def open(p, obj):
-	while len(p.parser.to_close) > p.lexer.depth:
-		close(p.parser.to_close.pop())
-	p.parser.last_obj = obj
-	obj.open()
-	obj.entab()
-	p.parser.to_close.append(obj)
 
 def p_haml_doc(p):
 	'''haml :
@@ -286,15 +271,15 @@ def p_haml_doc(p):
 
 def p_doc(p):
 	'doc : obj'
-	open(p, p[1])
+	pass
 
 def p_doc_obj(p):
 	'doc : doc obj'
-	open(p, p[2])
+	pass
 
 def p_doc_indent_obj(p):
 	'doc : doc LF obj'
-	open(p, p[3])
+	pass
 
 def p_obj(p):
 	'''obj : element
@@ -305,7 +290,12 @@ def p_obj(p):
 		| doctype
 		| script
 		| silentscript'''
-	p[0] = p[1]
+	while len(p.parser.to_close) > p.lexer.depth:
+		close(p.parser.to_close.pop())
+	p.parser.last_obj = p[1]
+	p[1].open()
+	p[1].entab()
+	p.parser.to_close.append(p[1])
 
 def p_filter(p):
 	'''filter : filter FILTER
@@ -369,7 +359,7 @@ def p_comment(p):
 	if len(p) == 3:
 		p[0].value = p[2]
 
-def p_element_tag_trim_dict_value(p):
+def p_element(p):
 	'''element : tag trim dict selfclose text'''
 	p[0] = p[1]
 	p[0].inner = '<' in p[2]
@@ -395,9 +385,7 @@ def p_text(p):
 	'''text :
 			| value
 			| script'''
-	if len(p) == 1:
-		p[0] = None
-	elif len(p) == 2:
+	if len(p) == 2:
 		p[0] = p[1]
 
 def p_value(p):
