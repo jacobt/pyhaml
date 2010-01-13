@@ -229,7 +229,8 @@ class Tag(haml_obj):
 			self.error('self-closing tags cannot have content')
 		
 		self.push('<' + self.tagname, inner=self.inner, outer=self.outer, literal=True)
-		self.script('_haml.attrs(%s, %s)' % (self.dict, repr(self.attrs)))
+		if self.dict != '{}' or len(self.attrs) > 0:
+			self.script('_haml.attrs(%s, %s)' % (self.dict, repr(self.attrs)))
 		
 		s = '>'
 		if self.auto() and self.parser.op.format == 'xhtml':
