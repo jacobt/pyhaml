@@ -156,16 +156,17 @@ class engine(object):
 	def escape(self, s):
 		self.write(cgi.escape(s, True))
 	
-	def attrs(self, *args):
+	def attrs(self, id, klass, a):
+		a = dict((k,v) for k,v in a.items() if v != None)
+		if id:
+			a['id'] = id + '_' + a.get('id','') if 'id' in a else id
+		if klass:
+			a['class'] = (klass + ' ' + a.get('class','')).strip()
 		w = self.op.attr_wrapper
-		attrs = {}
-		for a in args:
-			attrs.update(a)
-		for k,v in attrs.items():
-			if v != None:
-				if w in ('"',"'"):
-					v = str(v).replace(w, '&apos;')
-				self.write(' %s=%s%s%s' % (k,w,v,w))
+		for k,v in a.items():
+			if w in ('"',"'"):
+				v = str(v).replace(w, '&apos;')
+			self.write(' %s=%s%s%s' % (k,w,v,w))
 	
 	def compile(self, s):
 		self.parser.__dict__.update({

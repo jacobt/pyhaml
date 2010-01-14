@@ -44,6 +44,9 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual("<div class='foo bar'></div>\n", to_html(".foo.bar"))
 		self.assertEqual("<div id='foo' class='bar'></div>\n", to_html("#foo.bar"))
 		self.assertEqual("<img id='foo' class='bar baz'>\n", to_html("%img#foo.bar.baz"))
+		self.assertEqual("<p id='foo_bar'></p>\n", to_html("%p#foo{'id':'bar'}"))
+		self.assertEqual("<p id='foo'></p>\n", to_html("%p#foo{'id':None}"))
+		self.assertEqual("<p class='foo bar'></p>\n", to_html("%p.foo{'class':'bar'}"))
 	
 	def testattrs(self):
 		self.assertEqual("<p a='b'></p>\n", to_html("%p{ 'a':'b', 'c':None }"))

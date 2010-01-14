@@ -208,17 +208,15 @@ class Tag(haml_obj):
 	def __init__(self, parser):
 		haml_obj.__init__(self, parser)
 		self.dict = ''
-		self.attrs = {}
+		self.id = ''
+		self.klass = ''
 		self.tagname = 'div'
 		self.inner = False
 		self.outer = False
 		self.selfclose = False
 	
 	def addclass(self, s):
-		if not 'class' in self.attrs:
-			self.attrs['class'] = s
-		else:
-			self.attrs['class'] += ' ' + s
+		self.klass = (self.klass + ' ' + s).strip()
 	
 	def auto(self):
 		return (not self.value and
@@ -229,8 +227,8 @@ class Tag(haml_obj):
 			self.error('self-closing tags cannot have content')
 		
 		self.push('<' + self.tagname, inner=self.inner, outer=self.outer, literal=True)
-		if self.dict != '{}' or len(self.attrs) > 0:
-			self.script('_haml.attrs(%s, %s)' % (self.dict, repr(self.attrs)))
+		if self.dict != '{}' or self.klass or self.id:
+			self.script('_haml.attrs(%s,%s,%s)' % (repr(self.id),repr(self.klass),self.dict,))
 		
 		s = '>'
 		if self.auto() and self.parser.op.format == 'xhtml':
@@ -409,7 +407,7 @@ def p_tag_tagname(p):
 def p_tag_id(p):
 	'tag : ID'
 	p[0] = Tag(p.parser)
-	p[0].attrs['id'] = p[1]
+	p[0].id = p[1]
 
 def p_tag_class(p):
 	'tag : CLASSNAME'
@@ -420,7 +418,7 @@ def p_tag_tagname_id(p):
 	'tag : TAGNAME ID'
 	p[0] = Tag(p.parser)
 	p[0].tagname = p[1]
-	p[0].attrs['id'] = p[2]
+	p[0].id = p[2]
 
 def p_tag_tag_class(p):
 	'tag : tag CLASSNAME'
