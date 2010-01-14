@@ -44,8 +44,7 @@ class haml_obj(object):
 	
 	def push(self, s, inner=False, outer=False, **kwargs):
 		if not (outer or self.parser.trim_next or self.parser.preserve):
-			self.script("_haml.write('\\n')")
-			self.script('_haml.indent()')
+			self.indent()
 		self.write(s, **kwargs)
 		self.parser.trim_next = inner
 	
@@ -58,11 +57,21 @@ class haml_obj(object):
 		pre = '\t' * self.parser.depth
 		self.parser.src += [pre + s]
 	
+	def attrs(self, id, klass, attrs):
+		if attrs != '{}' or klass or id:
+			s = '_haml.attrs(%s,%s,%s)'
+			self.script(s % (repr(id), repr(klass), attrs,))
+	
 	def enblock(self):
 		self.parser.depth += 1
 	
 	def deblock(self):
 		self.parser.depth -= 1
+	
+	def indent(self, newline=True):
+		if newline:
+			self.write('\n', literal=True)
+		self.script('_haml.indent()')
 	
 	def entab(self):
 		self.script('_haml.entab()')
@@ -207,7 +216,7 @@ class Tag(haml_obj):
 	
 	def __init__(self, parser):
 		haml_obj.__init__(self, parser)
-		self.dict = ''
+		self.hash = ''
 		self.id = ''
 		self.klass = ''
 		self.tagname = 'div'
@@ -227,8 +236,7 @@ class Tag(haml_obj):
 			self.error('self-closing tags cannot have content')
 		
 		self.push('<' + self.tagname, inner=self.inner, outer=self.outer, literal=True)
-		if self.dict != '{}' or self.klass or self.id:
-			self.script('_haml.attrs(%s,%s,%s)' % (repr(self.id),repr(self.klass),self.dict,))
+		self.attrs(self.id, self.klass, self.hash)
 		
 		s = '>'
 		if self.auto() and self.parser.op.format == 'xhtml':
@@ -359,7 +367,7 @@ def p_element(p):
 	p[0] = p[1]
 	p[0].inner = '<' in p[2]
 	p[0].outer = '>' in p[2]
-	p[0].dict = p[3]
+	p[0].hash = p[3]
 	p[0].selfclose = p[4]
 	p[0].value = p[5]
 
