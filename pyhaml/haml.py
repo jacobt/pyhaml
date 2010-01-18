@@ -37,6 +37,10 @@ class engine(object):
 	
 	optparser = OptionParser(version=__version__)
 	
+	optparser.add_option('-i', '--filename',
+		help='file to render',
+		dest='filename')
+	
 	optparser.add_option('-d', '--debug',
 		help='display debugging information',
 		action='store_true',
@@ -45,7 +49,8 @@ class engine(object):
 	
 	optparser.add_option('-w', '--attr_wrapper',
 		help='attribute wrapper character',
-		action='store',
+		type='choice',
+		choices=['"',"'"],
 		dest='attr_wrapper',
 		default="'")
 
@@ -112,11 +117,14 @@ class engine(object):
 		self.globals = { '_haml': self }
 	
 	def setops(self, *args, **kwargs):
-		self.op, _ = engine.optparser.parse_args([])
-		self.op.__dict__.update(kwargs)
+		(self.op, _) = engine.optparser.parse_args([])
+		for (k,v) in kwargs.items():
+			opt = engine.optparser.get_option('--' + k)
+			if opt:
+				self.op.__dict__[k] = opt.check_value(k,v)
 	
 	def find_module(self, fullname):
-		dir = os.path.dirname(self.op.path)
+		dir = os.path.dirname(self.op.filename)
 		path = os.path.join(dir, '%s.haml' % fullname)
 		if os.path.exists(path):
 			return haml_loader(self, path)
@@ -164,8 +172,7 @@ class engine(object):
 			a['class'] = (klass + ' ' + a.get('class','')).strip()
 		w = self.op.attr_wrapper
 		for k,v in a.items():
-			if w in ('"',"'"):
-				v = str(v).replace(w, '&apos;')
+			v = str(v).replace(w, {'"':'&quot;', "'":'&#39;'}[w])
 			self.write(' %s=%s%s%s' % (k,w,v,w))
 	
 	def compile(self, s):
@@ -205,14 +212,14 @@ class engine(object):
 		finally:
 			sys.meta_path.remove(finder)
 	
-	def cache(self, path):
-		if not os.path.isfile(path):
-			raise Exception('file not found "%s"' % path)
-		if os.path.exists(path + '.py'):
-			if os.path.getmtime(path) <= os.path.getmtime(path + '.py'):
+	def cache(self, filename):
+		if not os.path.isfile(filename):
+			raise Exception('file not found "%s"' % filename)
+		if os.path.exists(filename + '.py'):
+			if os.path.getmtime(filename) <= os.path.getmtime(filename + '.py'):
 				return
-		with open(path + '.py', 'w') as py:
-			with open(path) as haml:
+		with open(filename + '.py', 'w') as py:
+			with open(filename) as haml:
 				py.write(self.compile(haml.read()))
 	
 	def to_html(self, s, *args, **kwargs):
@@ -222,10 +229,10 @@ class engine(object):
 		self.setops(*args, **kwargs)
 		return self.execute(self.compile(s), *args)
 	
-	def render(self, path, *args, **kwargs):
-		self.setops(path=path, *args, **kwargs)
-		self.cache(path)
-		with open(path + '.py') as f:
+	def render(self, filename, *args, **kwargs):
+		self.setops(filename=filename, *args, **kwargs)
+		self.cache(filename)
+		with open(filename + '.py') as f:
 			return self.execute(f.read(), *args)
 
 eng = engine()

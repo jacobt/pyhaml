@@ -68,9 +68,8 @@ class haml_obj(object):
 	def deblock(self):
 		self.parser.depth -= 1
 	
-	def indent(self, newline=True):
-		if newline:
-			self.write('\n', literal=True)
+	def indent(self):
+		self.write('\n', literal=True)
 		self.script('_haml.indent()')
 	
 	def entab(self):

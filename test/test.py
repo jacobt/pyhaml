@@ -4,6 +4,7 @@ import sys
 import difflib
 import unittest
 from functools import partial
+from optparse import OptionValueError
 
 dir = os.path.dirname(__file__)
 sys.path.insert(0, os.path.dirname(dir))
@@ -107,9 +108,9 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('<p>multiline</p>\n', to_html("%p=('multi'\n'line')"))
 	
 	def testescapeattrs(self):
-		self.assertEqual("<img title='foo&apos;s'>\n", to_html("%img{'title':'foo\\'s'}"))
+		self.assertEqual("<img title='foo&#39;s'>\n", to_html("%img{'title':'foo\\'s'}"))
 		self.assertEqual("<img foo='bar&baz'>\n", to_html("%img{'foo':'bar&baz'}"))
-		self.assertEqual("<p foo='&apos;'></p>\n", to_html("%p{'foo':'\\''}"))
+		self.assertEqual("<p foo='&#39;'></p>\n", to_html("%p{'foo':'\\''}"))
 	
 	def testsilent(self):
 		self.assertEqual('\n', to_html('-#'))
@@ -263,7 +264,7 @@ class TestHaml(unittest.TestCase):
 	def testwrapper(self):
 		self.assertEqual("<div class='foo'></div>\n", to_html('.foo', attr_wrapper="'"))
 		self.assertEqual('<div class="foo"></div>\n', to_html('.foo', attr_wrapper='"'))
-		self.assertEqual("<div class=foo></div>\n", to_html('.foo', attr_wrapper=''))
+		self.assertRaises(OptionValueError, partial(to_html, '.foo', attr_wrapper=''))
 	
 	def testbasicdiff(self):
 		self.diff('basic')
