@@ -259,7 +259,8 @@ class TestHaml(unittest.TestCase):
 	def testpreserve(self):
 		self.assertEqual('<pre><code></code></pre>\n', to_html('%pre\n %code'))
 		self.assertEqual('<div>\n  <pre></pre>\n</div>\n', to_html('%div\n %pre'))
-	#	self.assertEqual('<pre>a\nb\nc</pre>\n', to_html('%pre\n  a\n  b\n  c'))
+		self.assertEqual('<pre>a\nb\nc</pre>\n', to_html('%pre\n  a\n  b\n  c'))
+		self.assertEqual('<pre>a\nb\nc</pre>\n', to_html('%pre = "a\\nb\\nc"'))
 	
 	def testwrapper(self):
 		self.assertEqual("<div class='foo'></div>\n", to_html('.foo', attr_wrapper="'"))

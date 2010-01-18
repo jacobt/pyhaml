@@ -42,11 +42,10 @@ class haml_obj(object):
 	def __init__(self, parser):
 		self.parser = parser
 	
-	def push(self, s, inner=False, outer=False, **kwargs):
-		if not (outer or self.parser.trim_next or self.parser.preserve):
-			self.indent()
+	def push(self, s, **kwargs):
+		self.indent()
 		self.write(s, **kwargs)
-		self.parser.trim_next = inner
+		self.parser.trim_next = False
 	
 	def write(self, s, literal=False, escape=False):
 		s = repr(s) if literal else 'str(%s)' % s
@@ -69,8 +68,10 @@ class haml_obj(object):
 		self.parser.depth -= 1
 	
 	def indent(self):
-		self.write('\n', literal=True)
-		self.script('_haml.indent()')
+		if not self.parser.trim_next:
+			self.write('\n', literal=True)
+			if not self.parser.preserve:
+				self.script('_haml.indent()')
 	
 	def entab(self):
 		self.script('_haml.entab()')
@@ -230,11 +231,23 @@ class Tag(haml_obj):
 		return (not self.value and
 			(self.selfclose or self.tagname in self.parser.op.autoclose))
 	
+	def preserve(self):
+		return self.tagname in self.parser.op.preserve
+	
+	def push(self, s, closing=False, **kwargs):
+		(inner, outer) = (self.inner or self.preserve(), self.outer)
+		if closing:
+			(inner, outer) = (outer, inner)
+		if not outer:
+			self.indent()
+		self.write(s, **kwargs)
+		self.parser.trim_next = inner or self.preserve()
+	
 	def open(self):
 		if self.selfclose and self.value:
 			self.error('self-closing tags cannot have content')
 		
-		self.push('<' + self.tagname, inner=self.inner, outer=self.outer, literal=True)
+		self.push('<' + self.tagname, literal=True)
 		self.attrs(self.id, self.klass, self.hash)
 		
 		s = '>'
@@ -248,7 +261,7 @@ class Tag(haml_obj):
 			else:
 				self.write(self.value, literal=True)
 		
-		if self.tagname in self.parser.op.preserve:
+		if self.preserve():
 			self.parser.preserve += 1
 	
 	def close(self):
@@ -261,9 +274,9 @@ class Tag(haml_obj):
 		if self.auto() or self.value or self is self.parser.last_obj:
 			self.parser.trim_next = self.outer
 		else:
-			self.push('</' + self.tagname + '>', inner=self.outer, outer=self.inner, literal=True)
+			self.push('</' + self.tagname + '>', closing=True, literal=True)
 		
-		if self.tagname in self.parser.op.preserve:
+		if self.preserve():
 			self.parser.preserve -= 1
 
 def close(obj):
