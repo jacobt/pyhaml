@@ -52,6 +52,7 @@ class TestHaml(unittest.TestCase):
 	def testattrs(self):
 		self.assertEqual("<p a='b'></p>\n", to_html("%p{ 'a':'b', 'c':None }"))
 		self.assertEqual("<div style='ugly' class='atlantis'></div>\n", to_html(".atlantis{'style' : 'ugly'}"))
+		self.assertEqual("<img alt=''>\n", to_html("%img{'alt':''}"))
 		self.assertEqual("<p foo='bar}'></p>\n", to_html("%p{'foo':'bar}'}"))
 		self.assertEqual("<p foo='{bar'></p>\n", to_html("%p{'foo':'{bar'}"))
 		self.assertEqual("<p foo='bar'></p>\n", to_html("%p{'foo':'''bar'''}"))
@@ -204,6 +205,7 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual("<link rel='stylesheet'>foo</link>\n", to_html("%link{'rel':'stylesheet'} foo"))
 		self.assertEqual("<meta content='text/html'>\n", to_html("%meta{'content':'text/html'}"))
 		self.assertEqual("<input type='text'/>\n", to_html("%input{ 'type':'text' }", format='xhtml'))
+		self.assertEqual("<foo>\n<bar>\n", to_html("%foo\n%bar", autoclose=['foo','bar']))
 	
 	def testillegalnesting(self):
 		self.assertRaises(Exception, partial(to_html, '!!!\n %p'))
@@ -260,7 +262,7 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('<pre><code></code></pre>\n', to_html('%pre\n %code'))
 		self.assertEqual('<div>\n  <pre></pre>\n</div>\n', to_html('%div\n %pre'))
 		self.assertEqual('<pre>a\nb\nc</pre>\n', to_html('%pre\n  a\n  b\n  c'))
-		self.assertEqual('<pre>a\nb\nc</pre>\n', to_html('%pre = "a\\nb\\nc"'))
+		self.assertEqual('<pre>a\nb\nc</pre>\n', to_html("%pre = 'a\\nb\\nc'"))
 	
 	def testwrapper(self):
 		self.assertEqual("<div class='foo'></div>\n", to_html('.foo', attr_wrapper="'"))
