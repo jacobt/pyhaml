@@ -79,6 +79,7 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual('<img><img><img>\n', to_html('%img\n%img>\n%img'))
 		self.assertEqual('<p><b>foo</b></p>\n', to_html('%p\n %b<>\n  foo'))
 		self.assertEqual("<p><b a='b'>foo</b></p>\n", to_html("%p\n %b{'a':'b'}<>\n  foo"))
+		self.assertEqual("<p><b></b></p>\n", to_html('-def f():\n %b>\n%p\n -f()'))
 	
 	def testflextabs(self):
 		html = '<p>\n  foo\n</p>\n<q>\n  bar\n  <a>\n    baz\n  </a>\n</q>\n'
