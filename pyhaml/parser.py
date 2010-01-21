@@ -375,11 +375,11 @@ def p_comment(p):
 		p[0].value = p[2]
 
 def p_element(p):
-	'''element : tag trim dict selfclose text'''
+	'''element : tag dict trim selfclose text'''
 	p[0] = p[1]
-	p[0].inner = '<' in p[2]
-	p[0].outer = '>' in p[2]
-	p[0].hash = p[3]
+	p[0].hash = p[2]
+	p[0].inner = '<' in p[3]
+	p[0].outer = '>' in p[3]
 	p[0].selfclose = p[4]
 	p[0].value = p[5]
 
