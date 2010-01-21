@@ -37,7 +37,7 @@ doctypes = {
 doctypes['xhtml'][''] = doctypes['xhtml']['transitional']
 doctypes['html4'][''] = doctypes['html4']['transitional']
 
-class haml_obj(object):
+class HamlObj(object):
 	
 	def __init__(self, parser):
 		self.parser = parser
@@ -92,10 +92,10 @@ class haml_obj(object):
 	def error(self, msg):
 		raise Exception(msg)
 
-class Filter(haml_obj):
+class Filter(HamlObj):
 	
 	def __init__(self, parser):
-		haml_obj.__init__(self, parser)
+		HamlObj.__init__(self, parser)
 		self.lines = []
 	
 	def open(self):
@@ -119,10 +119,10 @@ class JavascriptFilter(Filter):
 			self.detab()
 		self.push('</script>', literal=True)
 
-class Content(haml_obj):
+class Content(HamlObj):
 	
 	def __init__(self, parser, value):
-		haml_obj.__init__(self, parser)
+		HamlObj.__init__(self, parser)
 		self.value = value
 	
 	def open(self):
@@ -131,10 +131,10 @@ class Content(haml_obj):
 	def close(self):
 		self.no_nesting()
 
-class Script(haml_obj):
+class Script(HamlObj):
 	
 	def __init__(self, parser, type='=', value=''):
-		haml_obj.__init__(self, parser)
+		HamlObj.__init__(self, parser)
 		self.type = type
 		self.value = value
 		self.escape = False
@@ -149,10 +149,10 @@ class Script(haml_obj):
 	def close(self):
 		pass
 
-class SilentScript(haml_obj):
+class SilentScript(HamlObj):
 	
 	def __init__(self, parser, value=''):
-		haml_obj.__init__(self, parser)
+		HamlObj.__init__(self, parser)
 		self.value = value
 	
 	def entab(self):
@@ -168,10 +168,10 @@ class SilentScript(haml_obj):
 	def close(self):
 		self.deblock()
 
-class Doctype(haml_obj):
+class Doctype(HamlObj):
 	
 	def __init__(self, parser):
-		haml_obj.__init__(self, parser)
+		HamlObj.__init__(self, parser)
 		self.xml = False
 		self.type = ''
 	
@@ -186,10 +186,10 @@ class Doctype(haml_obj):
 	def close(self):
 		self.no_nesting()
 
-class Comment(haml_obj):
+class Comment(HamlObj):
 	
 	def __init__(self, parser, value='', condition=''):
-		haml_obj.__init__(self, parser)
+		HamlObj.__init__(self, parser)
 		self.value = value.strip()
 		self.condition = condition.strip()
 	
@@ -212,10 +212,10 @@ class Comment(haml_obj):
 		else:
 			self.push(s, literal=True)
 
-class Tag(haml_obj):
+class Tag(HamlObj):
 	
 	def __init__(self, parser):
-		haml_obj.__init__(self, parser)
+		HamlObj.__init__(self, parser)
 		self.hash = ''
 		self.id = ''
 		self.klass = ''
