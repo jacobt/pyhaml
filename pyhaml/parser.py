@@ -54,7 +54,7 @@ class HamlObj(object):
 	
 	def script(self, s):
 		pre = '\t' * self.parser.depth
-		self.parser.src += [pre + s]
+		self.parser.src.append(pre + s)
 	
 	def attrs(self, id, klass, attrs):
 		if attrs != '{}' or klass or id:
