@@ -7,7 +7,9 @@ from functools import partial
 from optparse import OptionValueError
 
 dir = os.path.dirname(__file__)
-sys.path.insert(0, os.path.dirname(dir))
+parent = os.path.dirname(dir)
+sys.path.insert(0, parent)
+sys.path.insert(0, os.path.join(parent, 'pyhaml'))
 
 from pyhaml.patch import StringIO
 from pyhaml.parser import doctypes

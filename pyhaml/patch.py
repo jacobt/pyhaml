@@ -5,7 +5,7 @@ import tokenize
 
 if sys.version_info[0] >= 3:
 	import io
-	from .patch3 import ex
+	from patch3 import ex
 	
 	raw_input = input
 	StringIO = io.StringIO
@@ -17,7 +17,7 @@ if sys.version_info[0] >= 3:
 	def untokenize(toks):
 		return tokenize.untokenize(toks).decode()
 else:
-	from .patch2 import ex
+	from patch2 import ex
 	from StringIO import StringIO
 	
 	def toks(s):

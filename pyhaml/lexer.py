@@ -3,7 +3,7 @@ import os
 import sys
 import token
 
-from .patch import toks, untokenize
+from patch import toks, untokenize
 
 tokens = (
 	'LF',

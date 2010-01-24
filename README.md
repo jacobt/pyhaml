@@ -8,10 +8,10 @@ In order to make pyHaml a bit more pythonic, most of the syntax evaluated as Rub
 
 pyHaml aims to be flexible and intuitive, allowing python to be evaluated inline as would be expected.
 
-    - def foo(i):
+    -def foo(i):
       %p = i ** 2
-    - for i in range(4):
-      - foo(i)
+    -for i in range(4):
+      -foo(i)
 
 yields
 
@@ -45,18 +45,14 @@ which produces the following html:
 Markup should be reused just like code (since it is code).  In this vein there should be some way to use one haml document from within another.  In the spirit of python, pyHaml does this using the import statement.  For instance, assuming the following two documents:
 
     -# foo.haml
-    - def foo():
+    -def foo():
       %p foo
 
     -# bar.haml
-    - import foo
-    - foo.foo()
+    -import foo
+    -foo.foo()
 
-rendering `bar.haml` produces `<p>foo</p>`.  Some versions of python, particularly the one used in google appengine, cache imports.  This makes it impossible to use import for this purpose.  For this reason, the `_haml.imp` method is provided instead.  In the previous example the line `- import foo` would be written as `-foo = _haml.imp('foo')`.
-
-#command line
-
-pyhaml uses relative imports within the package.  For command line use, the guidlines in [PEP 366](http://www.python.org/dev/peps/pep-0366/) are followed.  Therefore, when running pyhaml from the command line, one must use python's -m switch in order to run pyhaml.  For instance, one could use `python -m pyhaml.haml <args...>` at the command line.
+rendering `bar.haml` produces `<p>foo</p>`.  Some versions of python, particularly the one used in google appengine, cache imports.  This makes it impossible to use import for this purpose.  For this reason, the `_haml.imp` method is provided instead.  In the previous example the line `-import foo` would be written as `-foo = _haml.imp('foo')`.
 
 #portability
 

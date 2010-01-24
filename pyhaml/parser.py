@@ -1,6 +1,6 @@
 import sys
 from functools import *
-from .lexer import tokens
+from lexer import tokens
 
 doctypes = {
 	'xhtml': {

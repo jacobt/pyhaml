@@ -7,12 +7,10 @@ import cgi
 import sys
 from optparse import OptionParser
 
-if __name__ == '__main__' and __package__ == None:
-	__package__ = 'pyhaml'
-
-from . import lexer,parser
-from .ply import lex, yacc
-from .patch import ex
+import lexer
+import parser
+from ply import lex, yacc
+from patch import ex
 
 __version__ = '0.1'
 	
