@@ -137,22 +137,24 @@ class Filter(HamlObj):
 		for l in self.lines:
 			self.push(l, literal=True)
 
+class CData(HamlObj):
+	
+	def open(self):
+		self.push('//<![CDATA[', literal=True)
+	
+	def close(self):
+		self.push('//]]>', literal=True)
+
 class JavascriptFilter(Filter):
 	
 	def open(self):
-		w = self.parser.op.attr_wrapper
-		self.push('<script type=%stext/javascript%s>' % (w,w), literal=True)
-		self.entab()
+		depth = len(self.parser.to_close)
+		Tag(self.parser, tagname='script',
+			hash=repr({'type':'text/javascript'})).begin(depth + 1)
 		if self.parser.op.format == 'xhtml':
-			self.push('//<![CDATA[', literal=True)
-			self.entab()
+			CData(self.parser).begin(depth + 2)
 		for l in self.lines:
-			self.push(l, literal=True)
-		self.detab()
-		if self.parser.op.format == 'xhtml':
-			self.push('//]]>', literal=True)
-			self.detab()
-		self.push('</script>', literal=True)
+			Content(self.parser, l).begin(depth + 3)
 
 class Content(HamlObj):
 	
@@ -249,15 +251,17 @@ class Comment(HamlObj):
 
 class Tag(HamlObj):
 	
-	def __init__(self, parser):
+	def __init__(self, parser, **kwargs):
 		HamlObj.__init__(self, parser)
 		self.hash = ''
 		self.id = ''
 		self.klass = ''
+		self.value = None
 		self.tagname = 'div'
 		self.inner = False
 		self.outer = False
 		self.selfclose = False
+		self.__dict__.update(kwargs)
 	
 	def addclass(self, s):
 		self.klass = (self.klass + ' ' + s).strip()
