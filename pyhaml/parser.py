@@ -42,6 +42,7 @@ class HamlCall(object):
 	def __init__(self, **kwargs):
 		self.args = []
 		self.func = None
+		self.script = ''
 		self.__dict__.update(kwargs)
 	
 	def __repr__(self):
@@ -57,6 +58,7 @@ class HamlObj(object):
 	
 	def __init__(self, parser):
 		self.parser = parser
+		self.src = parser.src
 	
 	def begin(self, depth):
 		while len(self.parser.to_close) > depth:
@@ -71,8 +73,17 @@ class HamlObj(object):
 		self.close()
 	
 	def call(self, **kwargs):
-		kwargs['depth'] = self.parser.depth
-		self.parser.src.append(HamlCall(**kwargs))
+		last = self.src[-1] if len(self.src) else None
+		next = HamlCall(depth=self.parser.depth, **kwargs)
+		
+		if last != None and last.depth == next.depth:
+			if next.func == 'detab' and last.func == 'entab':
+				return self.src.pop()
+			elif next.func in ('write', 'escape'):
+				if next.func == last.func:
+					return last.args.extend(next.args)
+		
+		self.src.append(next)
 	
 	def push(self, s, **kwargs):
 		self.indent()
@@ -109,10 +120,7 @@ class HamlObj(object):
 		self.call(func='entab')
 	
 	def detab(self):
-		if self.parser.src[-1].func == 'entab':
-			self.parser.src.pop()
-		else:
-			self.call(func='detab')
+		self.call(func='detab')
 	
 	def open(self):
 		pass

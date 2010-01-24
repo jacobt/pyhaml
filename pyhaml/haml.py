@@ -156,11 +156,11 @@ class engine(object):
 	def indent(self):
 		self.write('  ' * self.depth)
 	
-	def write(self, s):
-		self.html.append(s)
+	def write(self, *args):
+		self.html.append(''.join(args))
 	
-	def escape(self, s):
-		self.write(cgi.escape(s, True))
+	def escape(self, *args):
+		self.write(cgi.escape(''.join(args), True))
 	
 	def attrs(self, id, klass, a):
 		a = dict((k,v) for k,v in a.items() if v != None)
