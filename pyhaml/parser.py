@@ -37,10 +37,42 @@ doctypes = {
 doctypes['xhtml'][''] = doctypes['xhtml']['transitional']
 doctypes['html4'][''] = doctypes['html4']['transitional']
 
+class HamlCall(object):
+	
+	def __init__(self, **kwargs):
+		self.args = []
+		self.func = None
+		self.__dict__.update(kwargs)
+	
+	def __repr__(self):
+		if self.func == None:
+			return self.script
+		return '%s_haml.%s(%s)' % (
+				'\t' * self.depth,
+				self.func,
+				','.join(self.args),
+			)
+
 class HamlObj(object):
 	
 	def __init__(self, parser):
 		self.parser = parser
+	
+	def begin(self, depth):
+		while len(self.parser.to_close) > depth:
+			self.parser.to_close.pop().end()
+		self.parser.last_obj = self
+		self.open()
+		self.entab()
+		self.parser.to_close.append(self)
+	
+	def end(self):
+		self.detab()
+		self.close()
+	
+	def call(self, **kwargs):
+		kwargs['depth'] = self.parser.depth
+		self.parser.src.append(HamlCall(**kwargs))
 	
 	def push(self, s, **kwargs):
 		self.indent()
@@ -50,16 +82,16 @@ class HamlObj(object):
 	def write(self, s, literal=False, escape=False):
 		s = repr(s) if literal else 'str(%s)' % s
 		f = 'escape' if escape else 'write'
-		self.script('_haml.%s(%s)' % (f, s))
+		self.call(func=f, args=[s])
 	
 	def script(self, s):
 		pre = '\t' * self.parser.depth
-		self.parser.src.append(pre + s)
+		self.call(script=pre + s)
 	
 	def attrs(self, id, klass, attrs):
 		if attrs != '{}' or klass or id:
-			s = '_haml.attrs(%s,%s,%s)'
-			self.script(s % (repr(id), repr(klass), attrs,))
+			args = [repr(id), repr(klass), attrs]
+			self.call(func='attrs', args=args)
 	
 	def enblock(self):
 		self.parser.depth += 1
@@ -71,13 +103,16 @@ class HamlObj(object):
 		if not self.parser.trim_next:
 			self.write('\n', literal=True)
 			if not self.parser.preserve:
-				self.script('_haml.indent()')
+				self.call(func='indent')
 	
 	def entab(self):
-		self.script('_haml.entab()')
+		self.call(func='entab')
 	
 	def detab(self):
-		self.script('_haml.detab()')
+		if self.parser.src[-1].func == 'entab':
+			self.parser.src.pop()
+		else:
+			self.call(func='detab')
 	
 	def open(self):
 		pass
@@ -279,16 +314,12 @@ class Tag(HamlObj):
 		if self.preserve():
 			self.parser.preserve -= 1
 
-def close(obj):
-	obj.detab()
-	obj.close()
-
 def p_haml_doc(p):
 	'''haml :
 			| doc
 			| doc LF'''
-	while len(p.parser.to_close) > 0:
-		close(p.parser.to_close.pop())
+	while len(p.parser.to_close):
+		p.parser.to_close.pop().end()
 
 def p_doc(p):
 	'''doc : obj
@@ -305,12 +336,7 @@ def p_obj(p):
 		| doctype
 		| script
 		| silentscript'''
-	while len(p.parser.to_close) > p.lexer.depth:
-		close(p.parser.to_close.pop())
-	p.parser.last_obj = p[1]
-	p[1].open()
-	p[1].entab()
-	p.parser.to_close.append(p[1])
+	p[1].begin(p.lexer.depth)
 
 def p_filter(p):
 	'''filter : filter FILTER

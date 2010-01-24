@@ -194,7 +194,7 @@ class engine(object):
 		})
 		
 		self.parser.parse(s, lexer=self.lexer, debug=self.op.debug)
-		return '\n'.join(self.parser.src) + '\n'
+		return '\n'.join(map(str, self.parser.src)) + '\n'
 	
 	def execute(self, src, *args):
 		self.reset()
