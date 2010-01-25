@@ -88,7 +88,6 @@ class HamlObj(object):
 	def push(self, s, **kwargs):
 		self.indent()
 		self.write(s, **kwargs)
-		self.parser.trim_next = False
 	
 	def write(self, s, literal=False, escape=False):
 		s = repr(s) if literal else 'str(%s)' % s
@@ -111,9 +110,11 @@ class HamlObj(object):
 		self.parser.depth -= 1
 	
 	def indent(self):
-		if not self.parser.trim_next:
-			self.call(func='indent',
-				args=[not self.parser.preserve])
+		self.call(func='indent',
+			args=[not self.parser.preserve])
+	
+	def trim(self):
+		self.call(func='trim')
 	
 	def entab(self):
 		self.call(func='entab')
@@ -284,15 +285,14 @@ class Tag(HamlObj):
 		(inner, outer) = (self.inner or self.preserve(), self.outer)
 		if closing:
 			(inner, outer) = (outer, inner)
-		if not outer:
-			self.indent()
+		if outer or closing and self is self.parser.last_obj:
+			self.trim()
+		self.indent()
 		self.write(s, **kwargs)
-		self.parser.trim_next = inner or self.preserve()
+		if inner or self.parser.preserve:
+			self.trim()
 	
 	def open(self):
-		if self.selfclose and self.value:
-			self.error('self-closing tags cannot have content')
-		
 		self.push('<' + self.tagname, literal=True)
 		self.attrs(self.id, self.klass, self.hash)
 		
@@ -302,7 +302,9 @@ class Tag(HamlObj):
 		self.write(s, literal=True)
 		
 		if self.value:
-			if isinstance(self.value, Script):
+			if self.selfclose:
+				self.error('self-closing tags cannot have content')
+			elif isinstance(self.value, Script):
 				self.write(self.value.value, escape=self.value.escape)
 			else:
 				self.write(self.value, literal=True)
@@ -314,16 +316,13 @@ class Tag(HamlObj):
 		if self.value or self.selfclose:
 			self.no_nesting()
 		
-		if self.value or self is self.parser.last_obj and not self.auto():
-			self.write('</' + self.tagname + '>', literal=True)
-		
-		if self.auto() or self.value or self is self.parser.last_obj:
-			self.parser.trim_next = self.outer
-		else:
-			self.push('</' + self.tagname + '>', closing=True, literal=True)
-		
 		if self.preserve():
 			self.parser.preserve -= 1
+		
+		s = ''
+		if not self.auto() and not self.value or not self.auto():
+			s = '</' + self.tagname + '>'
+		self.push(s, closing=True, literal=True)
 
 def p_haml_doc(p):
 	'''haml :

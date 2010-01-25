@@ -112,6 +112,7 @@ class engine(object):
 	def reset(self):
 		self.depth = 0
 		self.html = []
+		self.trim_next = False
 		self.globals = { '_haml': self }
 	
 	def setops(self, *args, **kwargs):
@@ -153,10 +154,15 @@ class engine(object):
 	def detab(self):
 		self.depth -= 1
 	
+	def trim(self):
+		self.trim_next = True
+	
 	def indent(self, indent):
-		self.write('\n')
-		if indent:
-			self.write('  ' * self.depth)
+		if not self.trim_next:
+			self.write('\n')
+			if indent:
+				self.write('  ' * self.depth)
+		self.trim_next = False
 	
 	def write(self, *args):
 		self.html.append(''.join(args))
@@ -179,7 +185,6 @@ class engine(object):
 		self.parser.__dict__.update({
 			'depth': 0,
 			'src': [],
-			'trim_next': False,
 			'last_obj': None,
 			'debug': self.op.debug,
 			'op': self.op,

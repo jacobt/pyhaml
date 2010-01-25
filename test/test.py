@@ -83,8 +83,9 @@ class TestHaml(unittest.TestCase):
 		self.assertEqual("<p><b a='b'>foo</b></p>\n", to_html("%p\n %b{'a':'b'}<>\n  foo"))
 		self.assertEqual("<p><b>\n  a\n</b></p>\n", to_html("%p\n %b>\n  a"))
 		self.assertEqual("<p>\n  <b>a</b>\n</p>\n", to_html("%p\n %b<\n  a"))
-	#	self.assertEqual("<p><b></b></p>\n", to_html('-def f():\n %b>\n%p\n -f()'))
-	#	self.assertEqual("<p><b></b></p>\n", to_html('-def f():\n %b\n%p<\n -f()'))
+		self.assertEqual("<p><b></b></p>\n", to_html('-def f():\n %b>\n%p\n -f()'))
+		self.assertEqual("<p><b></b></p>\n", to_html('-def f():\n %b\n%p<\n -f()'))
+		self.assertEqual("<p><p>\n  foo\n</p></p>\n", to_html('%p\n %p>\n  foo'))
 	
 	def testflextabs(self):
 		html = '<p>\n  foo\n</p>\n<q>\n  bar\n  <a>\n    baz\n  </a>\n</q>\n'
