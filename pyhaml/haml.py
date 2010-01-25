@@ -153,8 +153,10 @@ class engine(object):
 	def detab(self):
 		self.depth -= 1
 	
-	def indent(self):
-		self.write('  ' * self.depth)
+	def indent(self, indent):
+		self.write('\n')
+		if indent:
+			self.write('  ' * self.depth)
 	
 	def write(self, *args):
 		self.html.append(''.join(args))

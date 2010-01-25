@@ -51,7 +51,7 @@ class HamlCall(object):
 		return '%s_haml.%s(%s)' % (
 				'\t' * self.depth,
 				self.func,
-				','.join(self.args),
+				','.join(map(str, self.args)),
 			)
 
 class HamlObj(object):
@@ -112,9 +112,8 @@ class HamlObj(object):
 	
 	def indent(self):
 		if not self.parser.trim_next:
-			self.write('\n', literal=True)
-			if not self.parser.preserve:
-				self.call(func='indent')
+			self.call(func='indent',
+				args=[not self.parser.preserve])
 	
 	def entab(self):
 		self.call(func='entab')
