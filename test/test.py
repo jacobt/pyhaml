@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.join(parent, 'pyhaml'))
 
 from pyhaml.patch import StringIO
 from pyhaml.parser import doctypes
-from pyhaml.haml import to_html, render, engine
+from pyhaml.haml import to_html, render
 
 class TestHaml(unittest.TestCase):
 	

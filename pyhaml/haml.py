@@ -14,7 +14,7 @@ from patch import ex
 
 __version__ = '0.1'
 	
-class haml_loader(object):
+class Loader(object):
 	
 	def __init__(self, engine, path):
 		self.engine = engine
@@ -23,7 +23,7 @@ class haml_loader(object):
 	def load_module(self, fullname):
 		return self.engine.load_module(fullname, self.path, self)
 
-class haml_finder(object):
+class Finder(object):
 	
 	def __init__(self, engine):
 		self.engine = engine
@@ -31,7 +31,7 @@ class haml_finder(object):
 	def find_module(self, fullname, path=None):
 		return self.engine.find_module(fullname)
 
-class engine(object):
+class Engine(object):
 	
 	optparser = OptionParser(version=__version__)
 	
@@ -116,9 +116,9 @@ class engine(object):
 		self.globals = { '_haml': self }
 	
 	def setops(self, *args, **kwargs):
-		(self.op, _) = engine.optparser.parse_args([])
+		(self.op, _) = Engine.optparser.parse_args([])
 		for (k,v) in kwargs.items():
-			opt = engine.optparser.get_option('--' + k)
+			opt = Engine.optparser.get_option('--' + k)
 			if opt:
 				self.op.__dict__[k] = opt.check_value(k,v)
 	
@@ -126,7 +126,7 @@ class engine(object):
 		dir = os.path.dirname(self.op.filename)
 		path = os.path.join(dir, '%s.haml' % fullname)
 		if os.path.exists(path):
-			return haml_loader(self, path)
+			return Loader(self, path)
 		return None
 	
 	def load_module(self, fullname, path, loader):
@@ -142,7 +142,7 @@ class engine(object):
 		return mod
 	
 	def imp(self, fullname):
-		finder = haml_finder(self)
+		finder = Finder(self)
 		loader = finder.find_module(fullname)
 		if loader:
 			return loader.load_module(fullname)
@@ -209,7 +209,7 @@ class engine(object):
 			self.globals.update(args[0])
 		if self.op.debug:
 			sys.stdout.write(src)
-		finder = haml_finder(self)
+		finder = Finder(self)
 		sys.meta_path.append(finder)
 		try:
 			ex(src, self.globals)
@@ -240,12 +240,12 @@ class engine(object):
 		with open(filename + '.py') as f:
 			return self.execute(f.read(), *args)
 
-eng = engine()
+eng = Engine()
 to_html = eng.to_html
 render = eng.render
 
 if __name__ == '__main__':
-	(op, args) = engine.optparser.parse_args(sys.argv[1:])
+	(op, args) = Engine.optparser.parse_args(sys.argv[1:])
 	
 	if op.batch:
 		eng.setops(**op.__dict__)
