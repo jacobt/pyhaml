@@ -103,6 +103,7 @@ class Engine(object):
 		])
 	
 	def __init__(self):
+		self._cache = {}
 		self.parser = yacc.yacc(
 			module=parser,
 			write_tables=0,
@@ -131,14 +132,13 @@ class Engine(object):
 	
 	def load_module(self, fullname, path, loader):
 		self.cache(path)
-		with open(path + '.py') as f:
-			src = f.read()
+		(_,code) = self._cache[path]
 		mod = imp.new_module(fullname)
 		mod = sys.modules.setdefault(fullname, mod)
 		mod.__file__ = path
 		mod.__loader__ = loader
 		mod.__dict__.update(self.globals)
-		ex(src, mod.__dict__)
+		ex(code, mod.__dict__)
 		return mod
 	
 	def imp(self, fullname):
@@ -220,12 +220,13 @@ class Engine(object):
 	def cache(self, filename):
 		if not os.path.isfile(filename):
 			raise Exception('file not found "%s"' % filename)
-		if os.path.exists(filename + '.py'):
-			if os.path.getmtime(filename) <= os.path.getmtime(filename + '.py'):
+		if filename in self._cache:
+			(mtime,code) = self._cache[filename]
+			if mtime > os.path.getmtime(filename):
 				return
-		with open(filename + '.py', 'w') as py:
-			with open(filename) as haml:
-				py.write(self.compile(haml.read()))
+		with open(filename) as haml:
+			mtime = os.path.getmtime(filename)
+			self._cache[filename] = (mtime, self.compile(haml.read()))
 	
 	def to_html(self, s, *args, **kwargs):
 		s = s.strip()
@@ -237,8 +238,8 @@ class Engine(object):
 	def render(self, filename, *args, **kwargs):
 		self.setops(filename=filename, *args, **kwargs)
 		self.cache(filename)
-		with open(filename + '.py') as f:
-			return self.execute(f.read(), *args)
+		(_,code) = self._cache[filename]
+		return self.execute(code, *args)
 
 eng = Engine()
 to_html = eng.to_html
