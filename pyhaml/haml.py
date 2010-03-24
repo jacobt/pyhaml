@@ -11,6 +11,7 @@ import lexer
 import parser
 from ply import lex, yacc
 from patch import ex
+from cache import Cache
 
 __version__ = '0.1'
 	
@@ -103,7 +104,7 @@ class Engine(object):
 		])
 	
 	def __init__(self):
-		self._cache = {}
+		self._cache = Cache()
 		self.parser = yacc.yacc(
 			module=parser,
 			write_tables=0,
@@ -131,8 +132,7 @@ class Engine(object):
 		return None
 	
 	def load_module(self, fullname, path, loader):
-		self.cache(path)
-		(_,code) = self._cache[path]
+		code = self.cache(path)
 		mod = imp.new_module(fullname)
 		mod = sys.modules.setdefault(fullname, mod)
 		mod.__file__ = path
@@ -218,15 +218,12 @@ class Engine(object):
 			sys.meta_path.remove(finder)
 	
 	def cache(self, filename):
-		if not os.path.isfile(filename):
-			raise Exception('file not found "%s"' % filename)
-		if filename in self._cache:
-			(mtime,code) = self._cache[filename]
-			if mtime > os.path.getmtime(filename):
-				return
-		with open(filename) as haml:
-			mtime = os.path.getmtime(filename)
-			self._cache[filename] = (mtime, self.compile(haml.read()))
+		if not filename in self._cache:
+			with open(filename) as haml:
+				mt = os.path.getmtime(filename)
+				self._cache[filename] = (mt, self.compile(haml.read()))
+		(_,code) = self._cache[filename]
+		return code
 	
 	def to_html(self, s, *args, **kwargs):
 		s = s.strip()
@@ -237,8 +234,7 @@ class Engine(object):
 	
 	def render(self, filename, *args, **kwargs):
 		self.setops(filename=filename, *args, **kwargs)
-		self.cache(filename)
-		(_,code) = self._cache[filename]
+		code = self.cache(filename)
 		return self.execute(code, *args)
 
 eng = Engine()
