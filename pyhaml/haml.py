@@ -10,7 +10,7 @@ from optparse import OptionParser
 import lexer
 import parser
 from ply import lex, yacc
-from patch import ex
+from patch import ex, StringIO
 from cache import Cache
 
 __version__ = '0.1'
@@ -113,7 +113,7 @@ class Engine(object):
 	
 	def reset(self):
 		self.depth = 0
-		self.html = []
+		self.html = StringIO()
 		self.trim_next = False
 		self.globals = { '_haml': self }
 	
@@ -165,7 +165,7 @@ class Engine(object):
 		self.trim_next = False
 	
 	def write(self, *args):
-		self.html.append(''.join(args))
+		list(map(self.html.write, args))
 	
 	def escape(self, *args):
 		self.write(cgi.escape(''.join(args), True))
@@ -213,17 +213,15 @@ class Engine(object):
 		sys.meta_path.append(finder)
 		try:
 			ex(src, self.globals)
-			return ''.join(self.html).strip() + '\n'
+			return self.html.getvalue().strip() + '\n'
 		finally:
 			sys.meta_path.remove(finder)
 	
 	def cache(self, filename):
 		if not filename in self._cache:
 			with open(filename) as haml:
-				mt = os.path.getmtime(filename)
-				self._cache[filename] = (mt, self.compile(haml.read()))
-		(_,code) = self._cache[filename]
-		return code
+				self._cache[filename] = self.compile(haml.read())
+		return self._cache[filename]
 	
 	def to_html(self, s, *args, **kwargs):
 		s = s.strip()
