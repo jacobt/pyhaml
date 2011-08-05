@@ -2,8 +2,19 @@ import re
 import os
 import sys
 import token
+from tokenize import TokenError
 
 from patch import toks, untokenize
+
+class HamlParserException(Exception):
+    """
+An error thrown by the Haml lexer or parser (not the generated Python code).
+Should be raised like this:
+raise HamlParserException, (lineno, line, message)
+line can either be the Haml string that parsed incorrectly or the lexpos of the
+line, which can be used to actually retreive the Haml line.
+    """
+    pass
 
 tokens = (
     'LF',
@@ -20,8 +31,9 @@ tokens = (
     'SILENTSCRIPT',
     'COMMENT',
     'CONDCOMMENT',
-    'TYPE',
     'FILTER',
+    'FILTERCONTENT',
+    'FILTERBLANKLINES',
 )
 
 states = (
@@ -31,7 +43,6 @@ states = (
     ('comment', 'exclusive'),
     ('tabs', 'exclusive'),
     ('multi', 'exclusive'),
-    ('script', 'exclusive'),
     ('filter', 'exclusive'),
 )
 
@@ -46,19 +57,25 @@ def build(self, **kwargs):
     return self
 
 def pytokens(t):
-    for tok in toks(t.lexer.lexdata[t.lexer.lexpos:]):
-        _, s, _, (_, ecol), _ = tok
-        yield tok
-        for _ in range(s.count('\n')):
-            t.lexer.lineno += 1
-            t.lexer.lexpos = t.lexer.lexdata.find('\n', t.lexer.lexpos+1) + 1
+    """Splits the string starting at t's position into Python tokens, yielding them."""
+    try:
+        for tok in toks(t.lexer.lexdata[t.lexer.lexpos:]):
+            _, s, _, (_, ecol), _ = tok
+            yield tok
+            for _ in range(s.count('\n')):
+                t.lexer.lineno += 1
+                t.lexer.lexpos = t.lexer.lexdata.find('\n', t.lexer.lexpos) + 1
+    except TokenError, ex:
+        raise HamlParserException, (t.lineno, t.lexpos, ex[0])
 
 def read_dict(t):
+    """Starting from a { token, reads a Python dictionary expression and sets 
+t.value to a string representation of it."""
     t.value = []
     lvl = 0
     for tok in pytokens(t):
         _, s, _, (_, ecol), _ = tok
-        t.value += [tok]
+        t.value.append(tok)
         if s == '{':
             lvl += 1
         elif s == '}':
@@ -69,6 +86,8 @@ def read_dict(t):
                 return t
 
 def read_script(t):
+    """Starting at a script token (- or =), reads a Python script and sets
+t.value to a string representation of it."""
     src = []
     for tok in pytokens(t):
         type, s, _, (_, ecol), _ = tok
@@ -76,7 +95,7 @@ def read_script(t):
             t.lexer.lexpos = len(t.lexer.lexdata)
             src = untokenize(src).strip()
             return src
-        src += [tok]
+        src.append(tok)
         if type == token.NEWLINE:
             t.lexer.lexpos += ecol - 1
             src = untokenize(src).strip()
@@ -89,10 +108,19 @@ def t_tag_doctype_comment_INITIAL_LF(t):
     t.lexer.push_state('tabs')
     return t
 
-def t_silent_filter_LF(t):
+def t_silent_LF(t):
     r'\n([\s]*\n)?'
     t.lexer.lineno += t.value.count('\n')
     t.lexer.push_state('tabs')
+
+def t_filter_FILTERBLANKLINES(t):
+    r'\n([\s]*\n)*'
+    newlines = t.value.count('\n')
+    t.value = newlines - 1
+    t.lexer.lineno += newlines
+    t.lexer.push_state('tabs')
+    if t.value > 0:
+        return t
 
 def t_tabs_other(t):
     r'[^ \t]'
@@ -121,11 +149,11 @@ def t_tabs_indent(t):
                 t.value = t.value[:tablen]
     
     if any(c != t.lexer.type for c in t.value):
-        raise Exception('mixed indentation')
+        raise HamlParserException, (t.lexer.lineno, t.lexer.lexpos, "mixed indentation")
     
     (d,r) = divmod(len(t.value), t.lexer.length)
     if r > 0 or d - t.lexer.depth > 1:
-        raise Exception('invalid indentation')
+        raise HamlParserException, (t.lexer.lineno, t.lexer.lexpos, "invalid indentation")
     
     t.lexer.depth = d
 
@@ -154,7 +182,7 @@ def t_doctype_HTMLTYPE(t):
     return t
 
 def t_VALUE(t):
-    r'[^:=&/#!.%\n\t -][^\n]*'
+    r'[^:=&/#!.%~\n\t -][^\n]*'
     t.value = t.value.strip()
     if t.value[0] == '\\':
         t.value = t.value[1:]
@@ -180,19 +208,19 @@ def t_comment_VALUE(t):
     return t
 
 def t_TAGNAME(t):
-    r'%[a-zA-Z][a-zA-Z0-9]*'
+    r'%[a-zA-Z][a-zA-Z0-9-:_]*'
     t.lexer.begin('tag')
     t.value = t.value[1:]
     return t
 
 def t_tag_INITIAL_ID(t):
-    r'\#[a-zA-Z][a-zA-Z0-9]*'
+    r'\#[a-zA-Z][a-zA-Z0-9-_]*'
     t.value = t.value[1:]
     t.lexer.begin('tag')
     return t
 
 def t_tag_INITIAL_CLASSNAME(t):
-    r'\.[a-zA-Z-][a-zA-Z0-9-]*'
+    r'\.[a-zA-Z-][a-zA-Z0-9-_]*'
     t.value = t.value[1:]
     t.lexer.begin('tag')
     return t
@@ -207,11 +235,11 @@ def t_SILENTSCRIPT(t):
     t.value = read_script(t)
     return t
 
-def t_tag_INITIAL_TYPE(t):
-    r'[ ]*(&|!)?='
-    t.lexer.lexpos -= 1
-    t.value = t.value.strip()
-    t.lexer.push_state('script')
+def t_tag_INITIAL_SCRIPT(t):
+    r'[ ]*(\~|(&|!)?=)'
+    script_type = t.value.strip()
+    script = read_script(t)
+    t.value = (script_type, script)
     return t
 
 def t_script_SCRIPT(t):
@@ -225,7 +253,7 @@ def t_tag_TRIM(t):
     return t
 
 def t_tag_VALUE(t):
-    r'[ \t]*[^{}<>=&/#!.%\n\t -][^\n]*'
+    r'[ \t]*[^{}<>=&/#!.%~\n\t -][^\n]*'
     t.value = t.value.strip()
     if t.value[0] == '\\':
         t.value = t.value[1:]
@@ -253,14 +281,14 @@ def t_multi_VALUE(t):
 def t_FILTER(t):
     r':[^\n]+'
     t.lexer.block = t.lexer.depth + 1
-    t.value = t.value[1:]
+    t.value = (t.lexer.depth, t.value[1:])
     t.lexer.push_state('filter')
     return t
 
-def t_filter_FILTER(t):
+def t_filter_FILTERCONTENT(t):
     r'[^\n]+'
     return t
 
 def t_ANY_error(t):
-    sys.stderr.write('Illegal character(s) [%s]\n' % t.value)
+    sys.stderr.write('Illegal character(s) [%s]\n' % str(t.value)[:10])
     t.lexer.skip(1)
