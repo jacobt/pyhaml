@@ -102,7 +102,7 @@ t.value to a string representation of it."""
             return src
 
 def t_tag_doctype_comment_INITIAL_LF(t):
-    r'\n([\s]*\n)?'
+    r'\s*\n([\s]*\n)?'
     t.lexer.lineno += t.value.count('\n')
     t.lexer.begin('INITIAL')
     t.lexer.push_state('tabs')
@@ -290,5 +290,5 @@ def t_filter_FILTERCONTENT(t):
     return t
 
 def t_ANY_error(t):
-    sys.stderr.write('Illegal character(s) [%s]\n' % str(t.value)[:10])
+    sys.stderr.write('Illegal character(s) [%s]\n' % str(t.value)[:50])
     t.lexer.skip(1)
