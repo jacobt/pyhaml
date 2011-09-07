@@ -199,6 +199,8 @@ Sets options for the Haml engine.  Options should be given as keyword arguments.
             a['class'] = (klass + ' ' + a.get('class','')).strip()
         w = self.op.attr_wrapper
         for k,v in a.items():
+            if v is None or v is False: continue
+            if v is True: v = k # for things like checked=checked
             v = unicode(v).replace(w, {'"':'&quot;', "'":'&#39;'}[w])
             self.write(' %s=%s%s%s' % (k,w,v,w))
 
